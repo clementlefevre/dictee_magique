@@ -10,14 +10,15 @@ import string
 
 
 from google_tts import play_text
-from alphabet_scrapper import load_letters,load_questions, load_others
+from alphabet_scrapper import load_letters, load_questions, load_others
 from questions import questions
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
-data_dir = os.path.join(main_dir, 'data')
+data_dir = os.path.join(main_dir, "data")
 
 letters_dic = load_letters()
 others_dic = load_others()
+
 questions_dic = load_questions()
 
 pygame.init()
@@ -80,7 +81,7 @@ class Chimp(pygame.sprite.Sprite):
         if self.dizzy >= 360:
             self.dizzy = 0
             self.image = self.original
-            
+
         else:
             rotate = pygame.transform.rotate
             self.image = rotate(self.original, self.dizzy)
@@ -96,7 +97,7 @@ class Chimp(pygame.sprite.Sprite):
 # Create TextInput-object
 textinput = pygame_textinput.TextInput(
     cursor_color=(0, 255, 0),
-    #font_family="Action_Man.ttf",
+    # font_family="Action_Man.ttf",
     font_size=200,
     text_color=(0, 255, 0),
 )
@@ -109,21 +110,20 @@ GREEN = (0, 255, 0)
 chimp = Chimp()
 allsprites = pygame.sprite.RenderPlain((chimp))
 
-current_state="lose"
+current_state = "lose"
 
 
 word = random.choice(questions)
 
-others_dic['bonjour'].play()
+others_dic["bonjour"].play()
 
 while pygame.mixer.get_busy():
-        pygame.time.wait(200)
-
+    pygame.time.wait(200)
 
 
 questions_dic[word].play()
 while pygame.mixer.get_busy():
-        pygame.time.wait(200)
+    pygame.time.wait(200)
 
 font = pygame.font.SysFont("comicsansms", 72)
 
@@ -147,44 +147,38 @@ while True:
     if textinput.update(events):
         print(textinput.get_text())
         play_text(textinput.get_text())
-        if textinput.get_text().lower()==word:
-            score = score +1
-            others_dic['ok'].play()
+        if textinput.get_text().lower() == word:
+            score = score + 1
+            others_dic["ok"].play()
             while pygame.mixer.get_busy():
                 pygame.time.wait(200)
-            word = random.choice(questions) 
+            word = random.choice(questions)
 
-            others_dic['maintenant_ecrit'].play()
+            others_dic["maintenant_ecrit"].play()
             while pygame.mixer.get_busy():
                 pygame.time.wait(200)
-            word = random.choice(questions)  
+            word = random.choice(questions)
 
             questions_dic[word].play()
             while pygame.mixer.get_busy():
                 pygame.time.wait(200)
         else:
 
-            others_dic['incorrect'].play()
+            others_dic["incorrect"].play()
             while pygame.mixer.get_busy():
                 pygame.time.wait(200)
             questions_dic[word].play()
             while pygame.mixer.get_busy():
                 pygame.time.wait(200)
 
-
-    
         chimp.punched()
-      
-
 
     # Blit its surface onto the screen
     screen.blit(textinput.get_surface(), (10, 500))
     text = font.render(f"score :{str(score)}", True, (0, 128, 0))
-    screen.blit(text,
-        (320 - text.get_width() // 2, 240 - text.get_height() // 2))
+    screen.blit(text, (320 - text.get_width() // 2, 240 - text.get_height() // 2))
 
     allsprites.draw(screen)
-    
 
     if text_entered0 != textinput.get_text():
         print(textinput.get_text())

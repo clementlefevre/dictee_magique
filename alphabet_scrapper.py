@@ -17,7 +17,8 @@ QUESTIONS_FOLDER = "data/questions/"
 # Instantiates a client
 client = texttospeech.TextToSpeechClient()
 
-pygame.mixer.init()
+pygame.mixer.init(frequency=32000)
+
 
 def store_text(text_to_store, filename=None):
 
@@ -39,13 +40,12 @@ def store_text(text_to_store, filename=None):
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
     response = client.synthesize_speech(synthesis_input, voice, audio_config)
-    if filename is None :
+    if filename is None:
 
         filename = str(text_to_store)
 
-    
     # The response's audio_content is binary.
-    with open("data/" + filename+".wav", "wb") as out:
+    with open("data/" + filename + ".wav", "wb") as out:
 
         # Write the response to the output file.
         out.write(response.audio_content)
@@ -59,11 +59,12 @@ def scrap_alphabet():
 
 def load_letters():
     sounds_dic = {}
-    
+
     for l in string.ascii_lowercase:
         sounds_dic[l] = pygame.mixer.Sound(f"{ALPHABET_FOLDER+str(l)}.wav")
 
     return sounds_dic
+
 
 def load_others():
     sounds_dic = {}
@@ -76,14 +77,11 @@ def load_others():
 
 def load_questions():
     sounds_dic = {}
-    
+
     for f in os.listdir(QUESTIONS_FOLDER):
         print(f)
         sounds_dic[f"{f.split('.')[0]}"] = pygame.mixer.Sound(f"{QUESTIONS_FOLDER+f}")
     return sounds_dic
-
-
-
 
 
 def play_letter(letter):

@@ -23,7 +23,7 @@ def play_text(text_str):
 
     # Select the type of audio file you want returned
     audio_config = texttospeech.types.AudioConfig(
-        sample_rate_hertz=44800,
+        sample_rate_hertz=100800,
         audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16,
     )
 
