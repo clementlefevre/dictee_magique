@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import random
 import pygame_textinput
 import pygame
 from pygame.compat import geterror
@@ -10,6 +11,7 @@ import string
 
 from google_tts import play_text
 from alphabet_scrapper import load_letters,load_questions, load_others
+from questions import questions
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 data_dir = os.path.join(main_dir, 'data')
@@ -49,7 +51,7 @@ class Chimp(pygame.sprite.Sprite):
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
         self.rect.topleft = 10, 10
-        self.move = 9
+        self.move = 2
         self.dizzy = 0
 
     def update(self):
@@ -110,15 +112,24 @@ allsprites = pygame.sprite.RenderPlain((chimp))
 current_state="lose"
 
 
+word = random.choice(questions)
+
 others_dic['bonjour'].play()
+
 while pygame.mixer.get_busy():
         pygame.time.wait(200)
 
-questions_dic['chat'].play()
+
+
+questions_dic[word].play()
 while pygame.mixer.get_busy():
         pygame.time.wait(200)
 
+font = pygame.font.SysFont("comicsansms", 72)
 
+
+score = 0
+text = font.render(f"score :{str(score)}", True, (0, 128, 0))
 
 while True:
     screen.fill((0, 0, 0))
@@ -136,10 +147,29 @@ while True:
     if textinput.update(events):
         print(textinput.get_text())
         play_text(textinput.get_text())
-        if textinput.get_text().lower()=="chat":
-            questions_dic['chat'].play()
+        if textinput.get_text().lower()==word:
+            score = score +1
+            others_dic['ok'].play()
+            while pygame.mixer.get_busy():
+                pygame.time.wait(200)
+            word = random.choice(questions) 
+
+            others_dic['maintenant_ecrit'].play()
+            while pygame.mixer.get_busy():
+                pygame.time.wait(200)
+            word = random.choice(questions)  
+
+            questions_dic[word].play()
+            while pygame.mixer.get_busy():
+                pygame.time.wait(200)
         else:
+
             others_dic['incorrect'].play()
+            while pygame.mixer.get_busy():
+                pygame.time.wait(200)
+            questions_dic[word].play()
+            while pygame.mixer.get_busy():
+                pygame.time.wait(200)
 
 
     
@@ -149,6 +179,9 @@ while True:
 
     # Blit its surface onto the screen
     screen.blit(textinput.get_surface(), (10, 500))
+    text = font.render(f"score :{str(score)}", True, (0, 128, 0))
+    screen.blit(text,
+        (320 - text.get_width() // 2, 240 - text.get_height() // 2))
 
     allsprites.draw(screen)
     

@@ -76,8 +76,12 @@ def load_others():
 
 def load_questions():
     sounds_dic = {}
-    sounds_dic['chat'] = pygame.mixer.Sound(f"{QUESTIONS_FOLDER+'chat'}.wav")
+    
+    for f in os.listdir(QUESTIONS_FOLDER):
+        print(f)
+        sounds_dic[f"{f.split('.')[0]}"] = pygame.mixer.Sound(f"{QUESTIONS_FOLDER+f}")
     return sounds_dic
+
 
 
 
