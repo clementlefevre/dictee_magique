@@ -11,8 +11,6 @@ import string
 import configparser
 
 
-
-
 # Instantiates a client
 client = texttospeech.TextToSpeechClient()
 
@@ -33,7 +31,7 @@ def store_text(text_to_store, filename=None):
     # Select the type of audio file you want returned
     audio_config = texttospeech.types.AudioConfig(
         sample_rate_hertz=44100,
-        audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16,
+        audio_encoding=texttospeech.enums.AudioEncoding.MP3,
     )
 
     # Perform the text-to-speech request on the text input with the selected
