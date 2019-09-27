@@ -94,7 +94,7 @@ function setQuestion() {
 
 function getRandomIndex(family) {
     const length = (Object.keys(data[family])).length;
-   
+
     const urlSoundIndex = Math.floor(Math.random() * length)
     return urlSoundIndex;
 
@@ -102,7 +102,7 @@ function getRandomIndex(family) {
 
 function getSoundUrl(soundFamily) {
     let urlSound = "";
-    
+
     if (soundFamily == 'QUESTIONS') {
         index = currentQuestion;
         urlSound = 'sounds/'.concat(soundFamily).concat('/').concat(index);
@@ -116,7 +116,7 @@ function getSoundUrl(soundFamily) {
     }
 
     urlSound = urlSound.concat('.mp3');
-   
+
     return urlSound;
 }
 
@@ -132,7 +132,7 @@ function playGreeting() {
         autoPlay: true,
         volume: 0.5,
         complete: function () {
-          
+
 
             playQuestion();
 
@@ -195,7 +195,6 @@ function playScore2() {
 
 
 
-
 function playAnswer(isOk) {
     let urlSound = ""
     let resultSound = {};
@@ -215,8 +214,12 @@ function playAnswer(isOk) {
             autoPlay: true,
             volume: 0.5,
             complete: function () {
+                if (isOk) {
+                    playScore1();
+                } else{
+                    playQuestion();
+                }
 
-                playScore1();
 
                 console.log('Sound finished');
 
