@@ -11,8 +11,8 @@ Text = PIXI.Text;
 
 //Create a Pixi Application
 let app = new Application({
-    width: 256 * 2.5,
-    height: 256 * 2.5,
+    width: 800,
+    height: 800,
     antialiasing: true,
     transparent: false,
     resolution: 1
@@ -26,6 +26,7 @@ document.body.appendChild(app.view);
 loader
     .add("images/cat.png")
     .add("images/ibm.png")
+    .add("images/ibmXT.png")
     .add("config.json")
     .load(setup);
 
@@ -55,9 +56,9 @@ input = new PIXI.TextInput({
         disabled: { fill: 'black', rounded: 12 }
     }
 })
-input.placeholder = ''
-input.x = 120
-input.y = 480
+input.placeholder = '';
+input.x = 160;
+input.y = 600;
 
 
 
@@ -73,13 +74,7 @@ function isLetter(str) {
     return str.length === 1 && str.match(/[a-z]/i);
 }
 
-
-
-const wordsList = ['coucou', 'caca', 'toto'];
-
 scoreCounter = 0;
-
-console.log(wordsList[2]);
 
 // sleep time expects milliseconds
 function sleep(time) {
@@ -99,7 +94,7 @@ function setQuestion() {
 
 function getRandomIndex(family) {
     const length = (Object.keys(data[family])).length;
-    console.log(length);
+   
     const urlSoundIndex = Math.floor(Math.random() * length)
     return urlSoundIndex;
 
@@ -107,16 +102,21 @@ function getRandomIndex(family) {
 
 function getSoundUrl(soundFamily) {
     let urlSound = "";
-    index = getRandomIndex(soundFamily)
+    
     if (soundFamily == 'QUESTIONS') {
         index = currentQuestion;
         urlSound = 'sounds/'.concat(soundFamily).concat('/').concat(index);
+    } else if (soundFamily == 'NUMBER') {
+
+        number_string = scoreCounter.toString()
+        urlSound = 'sounds/'.concat(soundFamily).concat('/').concat(number_string);
     } else {
+        index = getRandomIndex(soundFamily)
         urlSound = 'sounds/'.concat(soundFamily).concat('/').concat(Object.keys(data[soundFamily])[index]);
     }
 
     urlSound = urlSound.concat('.mp3');
-    console.log(urlSound);
+   
     return urlSound;
 }
 
@@ -132,7 +132,7 @@ function playGreeting() {
         autoPlay: true,
         volume: 0.5,
         complete: function () {
-            console.log('Sound finished');
+          
 
             playQuestion();
 
@@ -142,32 +142,59 @@ function playGreeting() {
 }
 
 
-function playQuestion(firstime = true) {
+function playQuestion() {
 
-    if (firstime) {
-        let urlSound = getSoundUrl('INTRO');
+    let urlSound = getSoundUrl('INTRO');
 
-        PIXI.sound.Sound.from({
-            url: urlSound,
-            autoPlay: true,
-            volume: 0.5,
-            complete: function () {
-                console.log('Sound finished');
-                let urlSound = getSoundUrl('QUESTIONS');
-                const sound = PIXI.sound.Sound.from(urlSound);
-                sound.play();
+    PIXI.sound.Sound.from({
+        url: urlSound,
+        autoPlay: true,
+        volume: 0.5,
+        complete: function () {
+            let urlSound = getSoundUrl('QUESTIONS');
+            const sound = PIXI.sound.Sound.from(urlSound);
+            sound.play();
+        }
+    });
 
-
-            }
-        });
-    } else {
-        let urlSound = getSoundUrl('QUESTIONS', true);
-        const sound = PIXI.sound.Sound.from(urlSound);
-        sound.play();
-    }
 
 
 }
+
+
+
+function playScore1() {
+    let urlSound = getSoundUrl('SCORE_INFOS_1');
+    PIXI.sound.Sound.from({
+        url: urlSound,
+        autoPlay: true,
+        volume: 0.5,
+        complete: playNumber
+    })
+}
+
+function playNumber() {
+    let urlSound = getSoundUrl('NUMBER');
+    PIXI.sound.Sound.from({
+        url: urlSound,
+        autoPlay: true,
+        volume: 0.5,
+        complete: playScore2
+    })
+}
+
+function playScore2() {
+    let urlSound = getSoundUrl('SCORE_INFOS_2');
+    PIXI.sound.Sound.from({
+        url: urlSound,
+        autoPlay: true,
+        volume: 0.5,
+        complete: playQuestion
+    })
+}
+
+
+
 
 function playAnswer(isOk) {
     let urlSound = ""
@@ -181,24 +208,24 @@ function playAnswer(isOk) {
         resultSound = buzzerSound;
     }
 
-        
-        resultSound.play(complete=function(){
-            PIXI.sound.Sound.from({
-                url: urlSound,
-                autoPlay: true,
-                volume: 0.5,
-                complete: function () {
-        
-                    playQuestion();
-        
-                    console.log('Sound finished');
-        
-                }
-            });
-        });
-    
 
-   
+    resultSound.play(complete = function () {
+        PIXI.sound.Sound.from({
+            url: urlSound,
+            autoPlay: true,
+            volume: 0.5,
+            complete: function () {
+
+                playScore1();
+
+                console.log('Sound finished');
+
+            }
+        });
+    });
+
+
+
 
 }
 
@@ -212,8 +239,12 @@ input.on('keyup', keycode => {
             if (input.text.toLowerCase() == data['QUESTIONS'][currentQuestion]) {
                 playAnswer(true);
                 scoreCounter++;
+
+                /// WTF ?
                 app.stage.addChild(message);
                 app.stage.addChild(scoreboard);
+
+
                 input.text = "";
                 message.text = "";
                 message.position.set(100, 430);
@@ -229,10 +260,10 @@ input.on('keyup', keycode => {
 
 
 
-    })
-} else {
-    spaceKeySound.play();
-}
+        })
+    } else {
+        spaceKeySound.play();
+    }
 
 })
 
@@ -252,19 +283,19 @@ let styleCursor = new PIXI.TextStyle({
 
 let styleScore = new PIXI.TextStyle({
     fontFamily: "VT323",
-    fontSize: 72,
+    fontSize: 60,
     fill: "greenyellow",
 });
 
 let message = new Text("START", styleMessage);
 let scoreboard = new Text("0 points", styleScore);
 let cursor = new Text(">", styleCursor);
-cursor.position.set(85, 490);
+cursor.position.set(130, 610);
 
 
 
 message.position.set(100, 430);
-scoreboard.position.set(200, 380);
+scoreboard.position.set(270, 200);
 
 
 let data = {};
@@ -289,9 +320,11 @@ function setup() {
     cat.vy = 0;
     app.stage.addChild(cat);
 
-    ibm = new Sprite(resources["images/ibm.png"].texture);
-    ibm.x = 0;
-    app.stage.addChild(ibm);
+    ibmXT = new Sprite(resources["images/ibmXT.png"].texture);
+    ibmXT.x = 0;
+    app.stage.addChild(ibmXT);
+
+
 
     //Set the game state
     state = play;
