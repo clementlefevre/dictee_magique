@@ -1,0 +1,3 @@
+- change cursor shape to flat
+- repeat question on type up key
+- spell again letter on answer
