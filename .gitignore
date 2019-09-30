@@ -4,3 +4,7 @@ __pycache__/
 env/
 dist/
 node_modules/
+.babelrc
+package-lock.json
+*.mp3
+*.wav
