@@ -8,8 +8,8 @@ import { getSoundUrl } from './service_play.js';
 
 //Create a Pixi Application
 let app = new PIXI.Application({
-    width: 800,
-    height: 800,
+    width:  window.innerWidth,
+    height: window.innerHeight,
     antialiasing: true,
     transparent: false,
     resolution: 1
@@ -20,6 +20,8 @@ const loader = PIXI.Loader.shared;
 
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
+
+
 
 
 loader.add("assets/images/cat.png")
@@ -47,7 +49,9 @@ input = new TextInput({
         fontSize: '96px',
         padding: '0px',
         width: '500px',
-        color: 'greenyellow'
+        color: 'transparent',
+        outline: 'none'
+
     },
     box: {
         default: { fill: 'black', rounded: 12, stroke: { color: 'black', width: 0 } },
@@ -56,15 +60,18 @@ input = new TextInput({
     }
 })
 input.placeholder = '';
-input.x = 160;
-input.y = 650;
+input.setInputStyle('color', "transparent");
+
+
+input.x = window.innerWidth/2;
+input.y = window.innerHeight/2;
 
 
 
 //input.pivot.x = 0;//input.width
 //input.pivot.y = input.height / 2
 
-input.restrict = ">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+input.restrict = ">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ▌";
 input.maxLength = 20;
 input.text = ">";
 
@@ -114,7 +121,8 @@ function playGreeting() {
 
 
 function playQuestion() {
-    input.setInputStyle('color',"yellowgreen");
+    //input.setInputStyle('color', "yellowgreen");
+
     input.text = ">";
     let urlSound = getSoundUrl('INTRO', gameData);
 
@@ -187,7 +195,7 @@ function playAnswer(isOk) {
             autoPlay: true,
             volume: 0.5,
             complete: function () {
-              
+
                 if (isOk) {
                     playScore1();
                 } else {
@@ -207,29 +215,36 @@ function playAnswer(isOk) {
 }
 
 
-input.on('keyup', keycode => {
 
-    input.text = input.text.toUpperCase();
-    console.log(input.text)
-   
+
+input.on('keyup', keycode => {
+    if(keycode!=8){
+        input.text = input.text.toUpperCase().replace('▌', '').concat('▌');
+        console.log(input.text);
+    }
+ 
+
+
 
     if (keycode == 13) {
         enterKeySound.play();
-        if (input.text.substr(1).toLowerCase() == gameData.data['QUESTIONS'][gameData.currentQuestion]) {
-            input.setInputStyle('color',"#FF55FF");
+        if (input.text.substr(1).replace('▌', '').toLowerCase() == gameData.data['QUESTIONS'][gameData.currentQuestion]) {
+            input.setInputStyle('color', "transparent");
+            input.setInputStyle('text-shadow', '0 0 0 #4bf321;');
+
             playAnswer(true);
             gameData.scoreCounter++;
 
 
-            
+
             message.text = "";
             message.position.set(100, 430);
             setQuestion();
 
 
-            
-            
-           
+
+
+
         } else {
             playAnswer(false);
 
@@ -300,10 +315,13 @@ function setup() {
     //Start the game loop 
     app.ticker.add(delta => gameLoop(delta));
 
-    input.focus();
+    
+    input.setInputStyle('outline', 'none');
+
     app.stage.addChild(message);
     app.stage.addChild(scoreboard);
     playGreeting();
+    input.focus();
 
 
 

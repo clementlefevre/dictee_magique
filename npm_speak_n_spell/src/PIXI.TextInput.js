@@ -10,11 +10,13 @@ class TextInput extends PIXI.Container{
 				position: 'absolute',
 				background: 'none',
 				border: 'none',
-				outline: 'none',
+				//color:'transparent',
+				
 				transformOrigin: '0 0',
 				lineHeight: '1'
 			},
-			styles.input
+			styles.input,
+			console.log(styles.input)
 		)
 
 		if(styles.box)
@@ -150,6 +152,8 @@ class TextInput extends PIXI.Container{
 	select(){
 		this.focus()
 		this._dom_input.select()
+		
+
 	}
 
 	setInputStyle(key,value){
