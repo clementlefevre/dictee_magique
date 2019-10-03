@@ -16,7 +16,7 @@ class TextInput extends PIXI.Container{
 				lineHeight: '1'
 			},
 			styles.input,
-			console.log(styles.input)
+		
 		)
 
 		if(styles.box)

@@ -1,0 +1,13 @@
++ add up key 38 for repeat question
+- add up key info on start
+- shorten Congrats 
+- read score every %5
+- caret disappears on backspace !!
+- score must blink
+- add floppy drive sound on start
+- focus on input not working 100%
+- must fail after 3 trials.
+- spell word on fail.
+- use loader for all resources incl. mp3
+- add OK/NOK text after ENTER pressed
+- for syllabe, display the 5 vowels on top.

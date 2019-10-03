@@ -1,27 +1,21 @@
 import * as PIXI from 'pixi.js';
-const TextInput = require('./PIXI.TextInput')
+
 import sound from 'pixi-sound';
-
-import { getSoundUrl } from './service_play.js';
-
-
+import * as soundService from './service/playService.js';
+import { getInput } from './service/inputService.js';
 
 //Create a Pixi Application
 let app = new PIXI.Application({
-    width:  window.innerWidth,
+    width: window.innerWidth,
     height: window.innerHeight,
     antialiasing: true,
     transparent: false,
     resolution: 1
 }
 );
-
 const loader = PIXI.Loader.shared;
-
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
-
-
 
 
 loader.add("assets/images/cat.png")
@@ -31,241 +25,64 @@ loader.add("assets/images/cat.png")
     .load(setup);
 
 
-const boingSound = sound.Sound.from('assets/sounds/boing.mp3');
-const buzzerSound = sound.Sound.from('assets/sounds/buzzer.mp3');
-const enterKeySound = sound.Sound.from('assets/sounds/KEYBOARD/enter-key.mp3');
-const spaceKeySound = sound.Sound.from('assets/sounds/KEYBOARD/space-bar.mp3');
-const backSpaceKeySound = sound.Sound.from('assets/sounds/KEYBOARD/backspace-key.mp3');
-
-
 
 //Define any variables that are used in more than one function
-let cat, state, input;
+
 let gameData = {};
 
-input = new TextInput({
-    input: {
-        fontFamily: 'VT323',
-        fontSize: '96px',
-        padding: '0px',
-        width: '500px',
-        color: 'transparent',
-        outline: 'none'
 
-    },
-    box: {
-        default: { fill: 'black', rounded: 12, stroke: { color: 'black', width: 0 } },
-        focused: { fill: 'black', rounded: 12, stroke: { color: 'black', width: 0 } },
-        disabled: { fill: 'black', rounded: 12 }
-    }
-})
-input.placeholder = '';
-input.setInputStyle('color', "transparent");
+gameData['input'] = getInput();
 
-
-input.x = window.innerWidth/2;
-input.y = window.innerHeight/2;
-
-
-
-//input.pivot.x = 0;//input.width
-//input.pivot.y = input.height / 2
-
-input.restrict = ">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ▌";
-input.maxLength = 20;
-input.text = ">";
-
-
-
-function isLetter(str) {
-    return str.length === 1 && str.match(/[a-z]/i);
-}
 gameData['scoreCounter'] = 0;
 
-// sleep time expects milliseconds
-function sleep(time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
-}
-
-const buzzer = sound.Sound.from({
-    url: 'assets/sounds/buzzer.mp3',
-    volume: 0.25,
-    loop: false
-});
+gameData['trialCounter'] = 0;
 
 
-function setQuestion() {
-    gameData['currentQuestion'] = gameData.allQuestions.shift();
-}
+gameData.input.on('keyup', keycode => {
 
-
-
-
-
-
-function playGreeting() {
-    let urlSound = getSoundUrl('GREETINGS', gameData);
-    setQuestion();
-    console.log(urlSound);
-
-    sound.Sound.from({
-        url: urlSound,
-        autoPlay: true,
-        volume: 0.5,
-        complete: function () {
-            playQuestion();
-        }
-    });
-
-}
-
-
-function playQuestion() {
-    //input.setInputStyle('color', "yellowgreen");
-
-    input.text = ">";
-    let urlSound = getSoundUrl('INTRO', gameData);
-
-    sound.Sound.from({
-        url: urlSound,
-        autoPlay: true,
-        volume: 0.5,
-        complete: function () {
-            let urlSound = getSoundUrl('QUESTIONS', gameData);
-            console.log(urlSound);
-            sound.Sound.from(urlSound).play();
-        }
-    });
-
-
-
-}
-
-
-
-function playScore1() {
-    scoreboard.text = gameData.scoreCounter.toString().padStart(2, '0').concat(' points');
-    let urlSound = getSoundUrl('SCORE_INFOS_1', gameData);
-    sound.Sound.from({
-        url: urlSound,
-        autoPlay: true,
-        volume: 0.5,
-        complete: playNumber
-    })
-}
-
-function playNumber() {
-    let urlSound = getSoundUrl('NUMBER', gameData);
-    sound.Sound.from({
-        url: urlSound,
-        autoPlay: true,
-        volume: 0.5,
-        complete: playScore2
-    })
-}
-
-function playScore2() {
-    let urlSound = getSoundUrl('SCORE_INFOS_2', gameData);
-    sound.Sound.from({
-        url: urlSound,
-        autoPlay: true,
-        volume: 0.5,
-        complete: playQuestion
-    })
-}
-
-
-
-function playAnswer(isOk) {
-    let urlSound = ""
-    let resultSound = boingSound;
-    if (isOk) {
-        urlSound = getSoundUrl('ANSWERS_OK', gameData);
-        resultSound = boingSound;
-
-    } else {
-        urlSound = getSoundUrl('ANSWERS_NOK', gameData);
-        resultSound = buzzerSound;
+    if (keycode == 38) {
+        soundService.playQuestion(gameData);
     }
+    if (keycode != 8) {
+        gameData.input.text = gameData.input.text.toUpperCase().replace('▌', '').concat('▌');
 
-
-    resultSound.play(function () {
-        sound.Sound.from({
-            url: urlSound,
-            autoPlay: true,
-            volume: 0.5,
-            complete: function () {
-
-                if (isOk) {
-                    playScore1();
-                } else {
-                    playQuestion();
-                }
-
-
-                console.log('Sound finished');
-
-            }
-        })
-
-
-    })
-
-
-}
-
-
-
-
-input.on('keyup', keycode => {
-    if(keycode!=8){
-        input.text = input.text.toUpperCase().replace('▌', '').concat('▌');
-        console.log(input.text);
     }
- 
-
-
 
     if (keycode == 13) {
-        enterKeySound.play();
-        if (input.text.substr(1).replace('▌', '').toLowerCase() == gameData.data['QUESTIONS'][gameData.currentQuestion]) {
-            input.setInputStyle('color', "transparent");
-            input.setInputStyle('text-shadow', '0 0 0 #4bf321;');
-
-            playAnswer(true);
+        gameData.enterKeySound.play();
+        if (gameData.input.text.substr(1).replace('▌', '').toLowerCase() == gameData.data['QUESTIONS'][gameData.currentQuestion]) {
+            gameData.input.setInputStyle('color', "transparent");
+            //gameData.input.setInputStyle('text-shadow', '0 0 0 #4bf321;');
+            gameData.message.style = styleMessageOK;
+            gameData.message.text = "CORRECT !";
+            soundService.playAnswer(gameData, true);
             gameData.scoreCounter++;
-
-
-
-            message.text = "";
-            message.position.set(100, 430);
-            setQuestion();
-
-
-
-
-
+            
+            soundService.setQuestion(gameData);
         } else {
-            playAnswer(false);
-
-            input.text = ">";
+            gameData.message.style = styleMessageNOK;
+            gameData.message.text = "WRONG !";
+            soundService.playAnswer(gameData, false);
+            
         }
-
     } else {
-        spaceKeySound.play();
+        gameData.spaceKeySound.play();
     }
-
 })
 
-app.stage.addChild(input)
+app.stage.addChild(gameData.input);
 
-let styleMessage = new PIXI.TextStyle({
+let styleMessageOK = new PIXI.TextStyle({
     fontFamily: "VT323",
-    fontSize: 48,
+    fontSize: 96,
     fill: "greenyellow",
 });
 
-
+let styleMessageNOK = new PIXI.TextStyle({
+    fontFamily: "VT323",
+    fontSize: 96,
+    fill: "red",
+});
 
 let styleScore = new PIXI.TextStyle({
     fontFamily: "VT323",
@@ -273,71 +90,43 @@ let styleScore = new PIXI.TextStyle({
     fill: "greenyellow",
 });
 
-let message = new PIXI.Text("START", styleMessage);
-let scoreboard = new PIXI.Text("0 points", styleScore);
+gameData['message'] = new PIXI.Text("", styleMessageOK);
+gameData['scoreboard'] = new PIXI.Text("00 point", styleScore);
 
-
-
-
-message.position.set(100, 430);
-scoreboard.position.set(270, 200);
-
-
-
-
-
-
+gameData.message.position.set(window.innerWidth / 2, window.innerHeight / 2 * 1.4);
+gameData.scoreboard.position.set(270, 200);
 
 function setup() {
-
     gameData['data'] = loader.resources['assets/config.json'].data.data;
-
     gameData['allQuestions'] = Object.keys(gameData.data['QUESTIONS']);
-
-
-
-    //Create the `cat` PIXI.PIXI.Sprite 
-    cat = new PIXI.Sprite(loader.resources["assets/images/cat.png"].texture);
-    cat.y = 96;
-    cat.vx = 0;
-    cat.vy = 0;
-    app.stage.addChild(cat);
-
     let ibmXT = new PIXI.Sprite(loader.resources["assets/images/ibmXT.png"].texture);
     ibmXT.x = 0;
     app.stage.addChild(ibmXT);
+    gameData.input.setInputStyle('outline', 'none');
+    app.stage.addChild(gameData.message);
+    app.stage.addChild(gameData.scoreboard);
+
+    gameData.input.focus();
+
+    const allSoundsUrls = soundService.getSoundsUrls(gameData);
+
+    loader.add(allSoundsUrls);
+    loader.load(function (loader) {
+        gameData.boingSound = loader.resources['assets/sounds/SOUNDS/s_1.mp3'].sound;
+        gameData.buzzerSound = loader.resources['assets/sounds/SOUNDS/s_2.mp3'].sound;
+        gameData.enterKeySound = loader.resources['assets/sounds/SOUNDS/s_3.mp3'].sound;
+        gameData.spaceKeySound = loader.resources['assets/sounds/SOUNDS/s_4.mp3'].sound;
+        gameData.backSpaceKeySound = loader.resources['assets/sounds/SOUNDS/s_5.mp3'].sound;
+        gameData.floppyDrive = loader.resources['assets/sounds/SOUNDS/s_6.mp3'].sound;
+        gameData['loader'] = loader;
+        soundService.playGreeting(gameData);
+
+    })
 
 
 
-    //Set the game state
-    state = play;
-
-    //Start the game loop 
-    app.ticker.add(delta => gameLoop(delta));
-
-    
-    input.setInputStyle('outline', 'none');
-
-    app.stage.addChild(message);
-    app.stage.addChild(scoreboard);
-    playGreeting();
-    input.focus();
 
 
-
-}
-
-function gameLoop(delta) {
-
-    //Update the current game state:
-    state(delta);
-}
-
-function play(delta) {
-
-    //Move the cat 1 pixel to the right each frame
-    cat.vx = 1
-    cat.x += cat.vx;
 }
 
 
