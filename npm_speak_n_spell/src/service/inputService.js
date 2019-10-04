@@ -5,7 +5,7 @@ export function getInput() {
     const input = new TextInput({
         input: {
             fontFamily: 'VT323',
-            fontSize: '96px',
+            fontSize: '48px',
             padding: '0px',
             width: '500px',
             color: 'transparent',
@@ -20,8 +20,7 @@ export function getInput() {
     input.placeholder = '';
     input.setInputStyle('color', "transparent");
 
-    input.x = window.innerWidth / 2;
-    input.y = window.innerHeight / 2;
+   
 
     //input.pivot.x = 0;//input.width
     //input.pivot.y = input.height / 2

@@ -2,37 +2,50 @@ import sound from 'pixi-sound';
 
 
 
-function getFilePath(x, gameData) {
-    const folderFiles = Object.keys(gameData.data[x]);
-    const allUrls = folderFiles.map(f => ['assets/sounds/',x,'/',f,'.mp3'].join(''));
+function getFilePath(x, game) {
+    const folderFiles = Object.keys(game.data[x]);
+    const allUrls = folderFiles.map(f => ['assets/sounds/', x, '/', f, '.mp3'].join(''));
     return allUrls;
 }
 
-export function getSoundsUrls(gameData) {
-    const allFolders = Object.keys(gameData.data);
-    let allUrls = allFolders.map(x => getFilePath(x, gameData));
-    let allNumbers = Array(gameData.allQuestions.length).fill().map((_, i) => i + 1);
+export function getSoundsUrls(game) {
+    const allFolders = Object.keys(game.data);
+    let allUrls = allFolders.map(x => getFilePath(x, game));
+
+    let allNumbers = Array(game.allQuestions.length).fill().map((_, i) => i + 1);
     allNumbers = allNumbers.map(x => 'assets/sounds/NUMBER/'.concat(x).concat('.mp3'))
-    allUrls = allUrls.flat().concat(allNumbers);
+
+    let allLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    allLetters = allLetters.map(x => 'assets/sounds/ALPHABET/'.concat(x).concat('.mp3'))
+
+    allUrls = allUrls.flat().concat(allNumbers).concat(allLetters);
     return (allUrls);
 
 }
 
+export function getMainSounds(game) {
+    let mainSounds = Array(6).fill().map((_, i) => i + 1)
+    mainSounds = mainSounds.map(x => ['assets/sounds/SOUNDS/s_', x, '.mp3'].join(''));
+    console.log(mainSounds);
+    return (mainSounds);
+}
 
-export function getSoundUrl(soundFamily, gameData) {
+
+
+export function getSoundUrl(soundFamily, game) {
     let urlSound = "";
     let index = 0;
 
     if (soundFamily == 'QUESTIONS') {
-        index = gameData.currentQuestion;
-        urlSound = ['assets/sounds/',soundFamily,'/',index].join('');
+        index = game.currentQuestion;
+        urlSound = ['assets/sounds/', soundFamily, '/', index].join('');
     } else if (soundFamily == 'NUMBER') {
 
-        let number_string = gameData.scoreCounter.toString()
+        let number_string = game.scoreCounter.toString()
         urlSound = ['assets/sounds/', soundFamily, '/', number_string].join('');
     } else {
-        index = getRandomIndex(soundFamily, gameData.data)
-        urlSound = ['assets/sounds/',soundFamily,'/',Object.keys(gameData.data[soundFamily])[index]].join('');
+        index = getRandomIndex(soundFamily, game.data)
+        urlSound = ['assets/sounds/', soundFamily, '/', Object.keys(game.data[soundFamily])[index]].join('');
     }
 
     urlSound = urlSound.concat('.mp3');
@@ -48,63 +61,113 @@ export function getRandomIndex(family, data) {
 
 }
 
-export function setQuestion(gameData) {
-    gameData['currentQuestion'] = gameData.allQuestions.shift();
+export function setQuestion(game) {
+    game['currentQuestion'] = game.allQuestions.shift();
 }
 
 
-export function playGreeting(gameData) {
-    gameData.floppyDrive.play(function(){
-        gameData.loader.resources[getSoundUrl('GREETINGS', gameData)].sound.play(() => playQuestion(gameData));
-        setQuestion(gameData);
+export function playGreeting(game) {
+    game.floppyDrive.play(function () {
+        game.loader.resources[getSoundUrl('GREETINGS', game)].sound.play(() => playQuestion(game));
+        setQuestion(game);
     })
-  
+
 }
 
-export function playQuestion(gameData) {
+export function playQuestion(game) {
     //input.setInputStyle('color', "yellowgreen");
-    gameData.input.text = ">";
-    gameData.message.text = "";
-    gameData.loader.resources[getSoundUrl('INTRO', gameData)].sound.play(() =>
-        gameData.loader.resources[getSoundUrl('QUESTIONS', gameData)].sound.play());
+    game.input.text = ">";
+    game.message.text = "";
+    game.loader.resources[getSoundUrl('INTRO', game)].sound.play(() =>
+        game.loader.resources[getSoundUrl('QUESTIONS', game)].sound.play());
 
 
 }
 
-export function playScore1(gameData) {
-    
-    gameData.loader.resources[getSoundUrl('SCORE_INFOS_1', gameData)].sound.play(() => playNumber(gameData))
+export function playScore1(game) {
+
+    game.loader.resources[getSoundUrl('SCORE_INFOS_1', game)].sound.play(() => playNumber(game))
 
 }
 
 
-export function playNumber(gameData) {
-    gameData.loader.resources[getSoundUrl('NUMBER', gameData)].sound.play(() => playScore2(gameData))
+export function playNumber(game) {
+    game.loader.resources[getSoundUrl('NUMBER', game)].sound.play(() => playScore2(game))
 }
 
-export function playScore2(gameData) {
-    gameData.scoreboard.text = gameData.scoreCounter.toString().padStart(2, '0').concat(' points');
-    gameData.loader.resources[getSoundUrl('SCORE_INFOS_2', gameData)].sound.play(() => playQuestion(gameData))
+export function playScore2(game) {
+    game.scoreboard.text = game.scoreCounter.toString().padStart(2, '0').concat(' points');
+    game.loader.resources[getSoundUrl('SCORE_INFOS_2', game)].sound.play(() => playQuestion(game))
 }
 
-export function playAnswer(gameData, isOk) {
+export function playAnswer(game, isOk) {
     let urlSound = ""
-    let resultSound = gameData.boingSound;
+    let resultSound = game.boingSound;
     if (isOk) {
-        urlSound = getSoundUrl('ANSWERS_OK', gameData);
-        resultSound = gameData.boingSound;
+        urlSound = getSoundUrl('ANSWERS_OK', game);
+        resultSound = game.boingSound;
     } else {
-        urlSound = getSoundUrl('ANSWERS_NOK', gameData);
-        resultSound = gameData.buzzerSound;
+        urlSound = getSoundUrl('ANSWERS_NOK', game);
+        resultSound = game.buzzerSound;
     }
 
     resultSound.play(function () {
-        gameData.loader.resources[urlSound].sound.play(function () {
+        game.loader.resources[urlSound].sound.play(function () {
             if (isOk) {
-                playScore1(gameData);
+                playScore1(game);
             } else {
-                playQuestion(gameData);
+                if (game.trials == 3) {
+                    playFailed(game);
+
+                } else {
+                    playQuestion(game);
+                }
+                game.input.focus();
             }
         })
     });
 }
+
+export function playFailed(game) {
+    game.loader.resources['assets/sounds/ANSWERS_FAILED/failed_1.mp3'].sound.play(() =>
+        game.loader.resources[getSoundUrl('QUESTIONS', game)].sound.play(() =>
+            game.loader.resources['assets/sounds/ANSWERS_FAILED/failed_2.mp3'].sound.play(() => playSpell(game))
+        ))
+
+}
+
+export function playSpell(game) {
+    const word = game.data['QUESTIONS'][game.currentQuestion].split('');
+    loopArray(word, game);
+}
+
+let x = 0;
+
+function loopArray(arr, game) {
+    customAlert(arr[x], game, function () {
+        // set x to next item
+        x++;
+
+        // any more items in array? continue loop
+        if (x < arr.length) {
+            loopArray(arr, game);
+        } else if (x == arr.length) {
+            console.log('coucou');
+            setQuestion(game);
+            playQuestion(game);
+        }
+
+    })
+}
+
+function customAlert(x, game, callback) {
+    // code to show your custom alert
+    // in this case its just a console log
+    console.log(x);
+    let url = ['assets/sounds/ALPHABET/', x, '.mp3'].join('');
+    console.log(url);
+    game.loader.resources[url].sound.play(callback);
+
+
+}
+

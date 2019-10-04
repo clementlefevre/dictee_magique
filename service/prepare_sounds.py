@@ -23,6 +23,7 @@ parser.add_argument("--speech", required=False, action="store_true")
 parser.add_argument("--config", required=False, action="store_true")
 parser.add_argument("--alphabet", required=False, action="store_true")
 parser.add_argument("--numbers", required=False, action="store_true")
+parser.add_argument("--full", required=False, action="store_true")
 
 args = parser.parse_args()
 
@@ -108,14 +109,18 @@ def create_all_sounds():
 if __name__ == "__main__":
     if args.alphabet:
         create_alphabet()
+        
     if args.numbers:
         create_numbers()
+        
     if args.config:
         create_config_json()
+        
     if args.speech:
         create_all_sounds()
+        
 
-    else:
+    if args.full:
         create_alphabet()
         create_numbers()
         create_all_sounds()
