@@ -11,7 +11,7 @@ class TextInput extends PIXI.Container{
 				background: 'none',
 				border: 'none',
 				//color:'transparent',
-				
+				spellcheck:'false',
 				transformOrigin: '0 0',
 				lineHeight: '1'
 			},
@@ -182,6 +182,8 @@ class TextInput extends PIXI.Container{
 		}else{
 			this._dom_input = document.createElement('input')
 			this._dom_input.type = 'text'
+			// remove redline
+			this._dom_input.spellcheck = false
 		}
 		
 		for(let key in this._input_style){

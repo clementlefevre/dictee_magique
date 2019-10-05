@@ -4,7 +4,7 @@ const TextInput = require('../PIXI.TextInput')
 export function getInput() {
     const input = new TextInput({
         input: {
-            fontFamily: 'VT323',
+            fontFamily: 'Px437_IBM_VGA8',
             fontSize: '48px',
             padding: '0px',
             width: '500px',

@@ -9,3 +9,4 @@ package-lock.json
 *.mp3
 *.wav
 speak_n_spell.code-workspace
+data/sounds/*.*
