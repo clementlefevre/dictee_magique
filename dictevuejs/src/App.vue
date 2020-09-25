@@ -1,26 +1,63 @@
 <template>
-  <div id="app">
+  <div id="app" class="container-fluid pt-3 pr-3 pl-3" style="height: 80%">
+    <div
+      v-if="showBootText"
+      style="
+        white-space: pre;
+        font-size: 18px;
+        border-style: solid;
+        border-width: 0.5px;
+        padding: 2%;
+        margin: 100px;
+        border-color: #0f0;
+        text-align: center;
+      "
+      class="intro"
+    >
+      {{ ibm }}
+    </div>
     <input
-      v-if="start"
-      type="text"
-      id="inputText"
-      @input="addBar($event)"
-      v-model="response"
-      v-on:keypress="isLetter($event)"
-      v-on:keyup.backspace="test"
-      ref="ta"
-      spellcheck="false"
+      v-if="showStart"
+      class="intro"
+      ref="start"
+      v-on:keypress.enter="startGame"
+      value="START"
     />
 
-    <input
-      v-if="!start"
-      v-on:keypress.enter="startGame"
-      value="PRESS ENTER TO PLAY"
-      ref="start"
-    />
-    {{ lastKey }}
-    <p>STATUS : {{ response }}</p>
-    <p>STATUS : {{ cursorPosition }}</p>
+    <vue-typed-js
+      v-if="showBootText"
+      class="intro"
+      :showCursor="false"
+      style="white-space: pre-line; font-size: 18px"
+      :strings="[
+        '4096 KB OK ^2000\n `C>PATH C:\\C:\\DOS;` ^3000\n `C>KEYB US 437 C:\\DOS\\KEYBOARD.SYS` ^3000\n `IBM Personal Computer DOS Version 3.30` ^3000\n\n ` `',
+      ]"
+      @onStart="playBoot()"
+      ><div class="typing"></div>
+    </vue-typed-js>
+
+    <div class="row" style="margin-left: 100px" v-if="showInput">
+      <span style="color: #0f0"> C:\></span>
+      <span>
+        <input
+          type="text"
+          id="inputText"
+          class="intro"
+          style="
+            white-space: pre-line;
+            font-size: 18px;
+            padding: 0px;
+            margin: 0px;
+          "
+          @input="addBar($event)"
+          v-model="response"
+          v-on:keypress="isLetter($event)"
+          v-on:keyup.backspace="test"
+          ref="ta"
+          spellcheck="false"
+        />
+      </span>
+    </div>
   </div>
 </template>
 
@@ -33,12 +70,17 @@ export default {
   name: "App",
   data: function () {
     return {
-      start: false,
-      response: "",
+      introText: "",
+      ibm:
+        "██╗██████╗ ███╗   ███╗\n ██║██╔══██╗████╗ ████║\n ██║██████╔╝██╔████╔██║\n ██║██╔══██╗██║╚██╔╝██║\n ██║██████╔╝██║ ╚═╝ ██║\n  ╚═╝╚═════╝ ╚═╝     ╚═╝",
+      response: "X",
       lastKey: "",
       status: "",
       textarea: null,
       cursorPosition: 0,
+      showStart: true,
+      showInput: false,
+      showBootText: false,
     };
   },
   mixins: [Game],
@@ -66,14 +108,24 @@ export default {
       }
     },
     startGame: function () {
-      this.openFullscreen();
-      var audio = new Audio(require("./assets/sounds/GREETINGS/bonjour_1.mp3"));
-      audio.play();
-      this.start = true;
-      this.$nextTick(() => {
-        this.$refs.ta.focus();
-      });
+      console.log("startGame");
+      this.playBoot();
+      //this.openFullscreen();
+      this.showBootText = true;
+      this.showStart = false;
     },
+    playBoot() {
+      console.log("playBoot");
+      var audio = new Audio(require("./assets/sounds/boot.mp3"));
+      audio.play();
+      audio.addEventListener("ended", this.handleEnded);
+    },
+    handleEnded() {
+      console.log("handleEnded");
+      this.showInput = true;
+      this.$nextTick(() => this.$refs.ta.focus());
+    },
+
     addBar: function () {
       this.response = this.response.replace("▌", "").concat("▌");
     },
@@ -98,9 +150,6 @@ export default {
     },
   },
   created() {
-    /* When the openFullscreen() function is executed, open the video in fullscreen.
-Note that we must include prefixes for different browsers, as they don't support the requestFullscreen method yet */
-
     this.$nextTick(() => {
       this.$refs.start.focus();
     });
@@ -131,49 +180,29 @@ body {
   font-family: "Px437", sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
+
   color: #2c3e50;
   margin-top: 60px;
+  margin-left: 100px;
   background-color: black;
 }
-input {
+.intro {
   font-family: "Px437", sans-serif !important;
-  font-size: 200px;
+  font-size: 18px;
   color: #0f0;
   background-color: black;
   caret-color: black;
   border-width: 0px;
   border-color: black;
+  text-align: left;
+
+  margin-top: 60px;
+  margin-left: 100px;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-}
-.blink {
-  width: 200px;
-  height: 50px;
-  background-color: magenta;
-  padding: 15px;
-  text-align: center;
-  line-height: 50px;
-}
-span {
-  font-size: 25px;
-  font-family: cursive;
-  color: white;
-  animation: blink 1s linear infinite;
-}
-@keyframes blink {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
 }
 </style>
