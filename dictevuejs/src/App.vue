@@ -116,7 +116,7 @@ export default {
     },
     playBoot() {
       console.log("playBoot");
-      var audio = new Audio(require("./assets/sounds/ALPHABET/x.mp3"));
+      var audio = new Audio(require("@/assets/sounds/ALPHABET/x.mp3"));
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
@@ -124,7 +124,7 @@ export default {
       console.log("handleEnded");
       this.showInput = true;
       this.$nextTick(() => this.$refs.ta.focus());
-      this.playList();
+      this.game.playGreeting();
     },
 
     addBar: function () {
