@@ -1,13 +1,13 @@
 
 
 function getFilePath(x, game) {
-    const folderFiles = Object.keys(game.data[x]);
+    const folderFiles = Object.keys(game.config.data[x]);
     const allUrls = folderFiles.map(f => ['assets/sounds/', x, '/', f, '.mp3'].join(''));
     return allUrls;
 }
 
 export function getSoundsUrls(game) {
-    const allFolders = Object.keys(game.data);
+    const allFolders = Object.keys(game.config.data);
     let allUrls = allFolders.map(x => getFilePath(x, game));
 
     let allNumbers = Array(game.allQuestions.length).fill().map((_, i) => i + 1);
@@ -21,7 +21,7 @@ export function getSoundsUrls(game) {
 
 }
 
-export function getMainSounds(game) {
+export function getMainSounds() {
     let mainSounds = Array(6).fill().map((_, i) => i + 1)
     mainSounds = mainSounds.map(x => ['assets/sounds/SOUNDS/s_', x, '.mp3'].join(''));
     console.log(mainSounds);
@@ -51,8 +51,8 @@ export function getSoundUrl(soundFamily, game) {
     return urlSound;
 }
 
-export function getRandomIndex(family, data) {
-    const length = (Object.keys(data[family])).length;
+export function getRandomIndex(family, game) {
+    const length = (Object.keys(game.config.data[family])).length;
 
     const urlSoundIndex = Math.floor(Math.random() * length)
     return urlSoundIndex;

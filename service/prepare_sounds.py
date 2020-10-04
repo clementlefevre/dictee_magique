@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# export GOOGLE_APPLICATION_CREDENTIALS=/d/Users/BKU/ClementLefevre/keys/genuine-airfoil-280911-5cef51b50ad6.json
+
 
 """Synthesizes speech from the input string of text or ssml.
 
@@ -14,6 +16,8 @@ import string
 import configparser
 import json
 import argparse
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/d/Users/BKU/ClementLefevre/keys/genuine-airfoil-280911-5cef51b50ad6.json"
 
 # required arg
 
@@ -59,7 +63,9 @@ def store_text(text_to_store, filename=None, folder=None):
 
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
-    response = client.synthesize_speech(input=synthesis_input, voice=voice,audio_config= audio_config)
+    response = client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
     if filename is None:
 
         filename = str(text_to_store)
@@ -111,16 +117,15 @@ def create_all_sounds():
 if __name__ == "__main__":
     if args.alphabet:
         create_alphabet()
-        
+
     if args.numbers:
         create_numbers()
-        
+
     if args.config:
         create_config_json()
-        
+
     if args.speech:
         create_all_sounds()
-        
 
     if args.full:
         create_alphabet()

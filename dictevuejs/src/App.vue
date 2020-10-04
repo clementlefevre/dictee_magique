@@ -73,7 +73,7 @@ export default {
       introText: "",
       ibm:
         "██╗██████╗ ███╗   ███╗\n ██║██╔══██╗████╗ ████║\n ██║██████╔╝██╔████╔██║\n ██║██╔══██╗██║╚██╔╝██║\n ██║██████╔╝██║ ╚═╝ ██║\n  ╚═╝╚═════╝ ╚═╝     ╚═╝",
-      response: "X",
+      response: "█",
       lastKey: "",
       status: "",
       textarea: null,
@@ -116,7 +116,7 @@ export default {
     },
     playBoot() {
       console.log("playBoot");
-      var audio = new Audio(require("./assets/sounds/boot.mp3"));
+      var audio = new Audio(require("./assets/sounds/ALPHABET/x.mp3"));
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
@@ -124,13 +124,14 @@ export default {
       console.log("handleEnded");
       this.showInput = true;
       this.$nextTick(() => this.$refs.ta.focus());
+      this.playList();
     },
 
     addBar: function () {
-      this.response = this.response.replace("▌", "").concat("▌");
+      this.response = this.response.replace("█", "").concat("█").toUpperCase();
     },
     test: function () {
-      this.response = this.response.slice(0, -2).concat("▌");
+      this.response = this.response.slice(0, -2).concat("█");
     },
     isLetter: function (e) {
       console.log("typed :", e.keyCode);
