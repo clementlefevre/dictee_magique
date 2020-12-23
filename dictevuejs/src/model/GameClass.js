@@ -84,7 +84,7 @@ export default class GameClass {
 
     playGreeting() {
         let key = this.getRandomProperty("GREETINGS")
-        let url = [this.data['GREETINGS'][key]["url"]]
+        let url = [this.data['GREETINGS'][key]["url"], this.data['GREETINGS'][key]["url"]]
         this.playList(url)
     }
 
