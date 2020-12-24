@@ -1,34 +1,19 @@
 //import * as playService from "../services/playService"
 import configJson from "../assets/config.json"
+import SoundService from "./SoundService";
+
 
 export default class GameClass {
     constructor() {
 
-        this.data = configJson.data
+        this.config = configJson.data
+        this.data = {}
+        this.sounds = new SoundService()
         this.allQuestions = Object.keys(this.data['QUESTIONS']);
-        this.initSoundUrls()
-        console.log(this.data)
-    }
-
-
-
-    initSoundUrls() {
-        Object.keys(this.data).forEach((key) => {
-            console.log(this.data[key])
-            Object.keys(this.data[key]).forEach((data_key) => {
-                let text = this.data[key][data_key]
-                this.data[key][data_key] = {}
-
-                this.data[key][data_key]["text"] = text
-                this.data[key][data_key]["url"] = key + "/" + data_key
-            });
-
-        });
     }
 
     getRandomIndex(family) {
         const length = (Object.keys(this.data[family])).length;
-
         const urlSoundIndex = Math.floor(Math.random() * length)
         return urlSoundIndex;
 
@@ -81,11 +66,22 @@ export default class GameClass {
         audio.play();
     }
 
+    getRandomGreetingSound() {
+        let key = this.getRandomProperty("GREETINGS")
+    }
+
 
     playGreeting() {
         let key = this.getRandomProperty("GREETINGS")
-        let url = [this.data['GREETINGS'][key]["url"], this.data['GREETINGS'][key]["url"]]
+        let key2 = this.getRandomProperty("INTRO")
+        let key3 = this.getRandomProperty("QUESTIONS")
+        let url = [this.data['GREETINGS'][key]["url"], this.data['INTRO'][key2]["url"], this.data['QUESTIONS'][key3]["url"]]
         this.playList(url)
+
+    }
+
+    playQuestion() {
+
     }
 
 

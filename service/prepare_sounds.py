@@ -17,9 +17,11 @@ import configparser
 import json
 import argparse
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/d/Users/BKU/ClementLefevre/keys/genuine-airfoil-280911-5cef51b50ad6.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ramon/keys/genuine-airfoil-280911-5cef51b50ad6.json"
 
 # required arg
+
+
 
 parser = argparse.ArgumentParser()
 
@@ -128,6 +130,7 @@ if __name__ == "__main__":
         create_all_sounds()
 
     if args.full:
+        print("coucou")
         create_alphabet()
         create_numbers()
         create_all_sounds()

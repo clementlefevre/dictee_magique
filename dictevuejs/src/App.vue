@@ -120,8 +120,8 @@ export default {
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
-    handleEnded() {
-      console.log("handleEnded");
+     handleEnded() {
+    
       this.showInput = true;
       this.$nextTick(() => this.$refs.ta.focus());
       this.game.playGreeting();
@@ -144,7 +144,7 @@ export default {
 
       if (restrictions.includes(char) | (e.keyCode == 8)) {
         e.keyCode != 8
-          ? this.playsound([{ family: "ALPHABET", name: char }])
+          ? this.game.playSound([{ family: "ALPHABET", name: char }])
           : null;
         return true;
       } else e.preventDefault(); // If not match, don't add to input text

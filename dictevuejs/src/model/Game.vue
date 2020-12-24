@@ -10,8 +10,6 @@ export default {
   },
   methods: {},
 
-  created() {
-    console.log("this.game.config :");
-  },
+  created() {},
 };
 </script>
