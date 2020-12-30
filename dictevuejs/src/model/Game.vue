@@ -1,11 +1,11 @@
 <script>
-import Game from "./GameClass";
+import GameClass from "./GameClass";
 //let
 export default {
   data() {
     return {
       soundRoot: "../assets/sounds",
-      game: new Game(),
+      game: new GameClass(),
     };
   },
   methods: {},

@@ -120,11 +120,10 @@ export default {
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
-     handleEnded() {
-    
+    handleEnded() {
       this.showInput = true;
       this.$nextTick(() => this.$refs.ta.focus());
-      this.game.playGreeting();
+      this.game.startGame();
     },
 
     addBar: function () {
@@ -138,14 +137,23 @@ export default {
       if (e.keyCode == 13) {
         console.log("pressed enter");
         console.log("response", this.response);
+        this.game.checkAnswer(
+          this,
+          this.response.replace("█", "").toLowerCase()
+        );
+
         return;
       }
+      if (e.keyCode == 32) {
+        console.log("pressed SPACE");
+        this.game.repeatQuestion();
+        return;
+      }
+
       let char = String.fromCharCode(e.keyCode); // Get the character
 
       if (restrictions.includes(char) | (e.keyCode == 8)) {
-        e.keyCode != 8
-          ? this.game.playSound([{ family: "ALPHABET", name: char }])
-          : null;
+        e.keyCode != 8 ? this.game.sounds.playLetter(char) : null;
         return true;
       } else e.preventDefault(); // If not match, don't add to input text
     },
