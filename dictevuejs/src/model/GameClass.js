@@ -1,34 +1,28 @@
 //import * as playService from "../services/playService"
-import configJson from "../assets/config.json"
+import configJson from "@/assets/config.json"
+import SoundService from "./SoundService";
+
+
+let status = {
+
+    score: 0,
+    level: 0,
+    retry: 0,
+    username: "test"
+
+}
 
 export default class GameClass {
     constructor() {
 
-        this.data = configJson.data
+        this.data = configJson["data"]
+        this.sounds = new SoundService(this)
         this.allQuestions = Object.keys(this.data['QUESTIONS']);
-        this.initSoundUrls()
-        console.log(this.data)
-    }
-
-
-
-    initSoundUrls() {
-        Object.keys(this.data).forEach((key) => {
-            console.log(this.data[key])
-            Object.keys(this.data[key]).forEach((data_key) => {
-                let text = this.data[key][data_key]
-                this.data[key][data_key] = {}
-
-                this.data[key][data_key]["text"] = text
-                this.data[key][data_key]["url"] = key + "/" + data_key
-            });
-
-        });
+        this.status = status
     }
 
     getRandomIndex(family) {
         const length = (Object.keys(this.data[family])).length;
-
         const urlSoundIndex = Math.floor(Math.random() * length)
         return urlSoundIndex;
 
@@ -39,53 +33,59 @@ export default class GameClass {
         return keys[Math.floor(Math.random() * keys.length)];
     }
 
+
     setQuestion() {
-        this['currentQuestion'] = this.allQuestions.shift();
+        let currentQuestionKey = this.allQuestions.shift();
+        this['currentQuestion'] = this.data["QUESTIONS"][currentQuestionKey]
+
     }
-
-    playSound(sound) {
-        var audio = new Audio()
-        audio.volume = 0.9;
-        audio.loop = false;
-
-        // https://stackoverflow.com/a/37228426/3209276
-        console.log("playing : " + "@/assets/sounds/" + sound + ".mp3")
-        audio.src = require("@/assets/sounds/" + sound + ".mp3");
-        return (audio)
+    startGame() {
+        this.setQuestion()
+        this.sounds.playGreeting()
     }
+    checkAnswer(self, answer) {
 
-    playList(soundList) {
-        var i = 0
-        var audio = this.playSound(soundList[0])
-        if (i <= soundList.length) {
-            audio.addEventListener("ended", () =>
-                this.handleEnded(i, soundList.length, soundList)
-            )
+        self.response = "█"
+        console.log("answer is:", answer)
+        console.log("current question is:", this.currentQuestion.text)
+        if (answer === this.currentQuestion.text) {
+            this.sounds.playAnswerOK()
+            this.askNextQuestion()
+            this.status.score++
+        } else {
+            this.status.retry = this.status.retry + 1
+            this.sounds.playWrongAnswer()
         }
-        audio.play();
-        i++;
-
+        console.log("answer is : ", answer)
     }
-    handleEnded(i, length, soundList) {
-        console.log("handleEnded, i:", i);
-
-        var audio = this.playSound(soundList[i])
-        i++;
-
-        if (i < soundList.length) {
-            audio.addEventListener("ended", () =>
-                this.handleEnded(i, length, soundList)
-            )
-
+    repeatQuestion() {
+        this.sounds.playCurrentQuestion()
+    }
+    askNextQuestion() {
+        console.log(this.allQuestions.length)
+        if (this.allQuestions.length < 1) {
+            console.log("FINISHED !")
+            this.sounds.playWin()
+        } else {
+            this.setQuestion()
+            this.sounds.playNextQuestion()
         }
-        audio.play();
+
+
     }
 
 
-    playGreeting() {
+
+    getRandomGreetingSound() {
         let key = this.getRandomProperty("GREETINGS")
-        let url = [this.data['GREETINGS'][key]["url"], this.data['GREETINGS'][key]["url"]]
-        this.playList(url)
+        console.log("key :", key)
+    }
+
+
+
+
+    playQuestion() {
+
     }
 
 

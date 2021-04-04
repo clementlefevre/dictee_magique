@@ -16,6 +16,23 @@
     >
       {{ ibm }}
     </div>
+    <div
+      v-if="showBootText"
+      style="
+        white-space: pre;
+        font-size: 18px;
+        border-style: solid;
+        border-width: 0.5px;
+        padding: 2%;
+        margin: 100px;
+        border-color: #0f0;
+        text-align: center;
+      "
+      class="intro"
+    >
+      Score :{{ game.status.score }} <br />
+      Level :{{ game.status.level }}
+    </div>
     <input
       v-if="showStart"
       class="intro"
@@ -117,14 +134,14 @@ export default {
     playBoot() {
       console.log("playBoot");
       var audio = new Audio(require("@/assets/sounds/ALPHABET/x.mp3"));
+      //var audio = new Audio(require("@/assets/sounds/boot.mp3"));
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
     handleEnded() {
-      console.log("handleEnded");
       this.showInput = true;
       this.$nextTick(() => this.$refs.ta.focus());
-      this.game.playGreeting();
+      this.game.startGame();
     },
 
     addBar: function () {
@@ -138,14 +155,23 @@ export default {
       if (e.keyCode == 13) {
         console.log("pressed enter");
         console.log("response", this.response);
+        this.game.checkAnswer(
+          this,
+          this.response.replace("█", "").toLowerCase()
+        );
+
         return;
       }
+      if (e.keyCode == 32) {
+        console.log("pressed SPACE");
+        this.game.repeatQuestion();
+        return;
+      }
+
       let char = String.fromCharCode(e.keyCode); // Get the character
 
       if (restrictions.includes(char) | (e.keyCode == 8)) {
-        e.keyCode != 8
-          ? this.playsound([{ family: "ALPHABET", name: char }])
-          : null;
+        e.keyCode != 8 ? this.game.sounds.playLetter(char) : null;
         return true;
       } else e.preventDefault(); // If not match, don't add to input text
     },
