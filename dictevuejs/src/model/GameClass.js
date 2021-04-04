@@ -7,6 +7,7 @@ let status = {
 
     score: 0,
     level: 0,
+    retry: 0,
     username: "test"
 
 }
@@ -43,12 +44,17 @@ export default class GameClass {
         this.sounds.playGreeting()
     }
     checkAnswer(self, answer) {
+
         self.response = "█"
         console.log("answer is:", answer)
         console.log("current question is:", this.currentQuestion.text)
         if (answer === this.currentQuestion.text) {
-            console.log("bonne reponse")
+            this.sounds.playAnswerOK()
             this.askNextQuestion()
+            this.status.score++
+        } else {
+            this.status.retry = this.status.retry + 1
+            this.sounds.playWrongAnswer()
         }
         console.log("answer is : ", answer)
     }
@@ -56,7 +62,8 @@ export default class GameClass {
         this.sounds.playCurrentQuestion()
     }
     askNextQuestion() {
-        if (this.allQuestions.length < 23) {
+        console.log(this.allQuestions.length)
+        if (this.allQuestions.length < 1) {
             console.log("FINISHED !")
             this.sounds.playWin()
         } else {
@@ -66,9 +73,12 @@ export default class GameClass {
 
 
     }
+
+
+
     getRandomGreetingSound() {
         let key = this.getRandomProperty("GREETINGS")
-        console.log("kex :", key)
+        console.log("key :", key)
     }
 
 

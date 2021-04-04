@@ -103,9 +103,10 @@ export default class SoundService {
         this.playList(this.game.currentQuestion['sounds'])
     }
     playNextQuestion() {
+        let soundOK = this.setSound("ANSWERS_OK")
         let soundIntro = this.setSound("INTRO")
         let soundQuestion = this.game['currentQuestion']
-        let sounds = [soundIntro, soundQuestion]
+        let sounds = [soundOK, soundIntro, soundQuestion]
         this.game.currentQuestion['sounds'] = sounds
         this.playList(sounds)
 
@@ -113,5 +114,51 @@ export default class SoundService {
     playWin() {
         let soundWin = this.setSound("SCORE_INFOS_2")
         this.playList([soundWin])
+    }
+
+    playWrongAnswer() {
+        let soundWrong = this.setSound("ANSWERS_NOK")
+        console.log("this.game.status.retry ", this.game.status.retry)
+        if (this.game.status.retry == 1) {
+            console.log("this.game.status.retry == 3", this.game.status.retry)
+            let soundCorrectAnswer = this.playCorrectAnswer()
+            let lista = [...[soundWrong], ...soundCorrectAnswer, ...[this.setSound("INTRO"), this.game['currentQuestion']]]
+            console.log("lista:", lista)
+            this.playList(lista)
+        } else {
+            this.playList([soundWrong, this.setSound("INTRO"), this.game['currentQuestion']])
+        }
+
+    }
+    playCorrectAnswer() {
+        console.log("playCorrectAnswer")
+        let sounds = [this.game.data['ANSWER_EXPLANATION']['answer_1'], this.game['currentQuestion']]
+        sounds.push(this.game.data['ANSWER_EXPLANATION']['answer_2'])
+        let spelling_letters = this.getCorrectSpelling()
+        spelling_letters.forEach(item => sounds.push(item));
+
+
+        //sounds.push.apply(sounds, sound_correct_spelling)
+
+        console.log("playCorrectAnswer sounds :", sounds)
+
+        return sounds
+
+    }
+    getCorrectSpelling() {
+        let sound_correct_spelling = this.game['currentQuestion'].text.split("")
+        let sound_list = []
+        sound_correct_spelling.map(x => {
+
+            sound_list.push({ text: x, url: "ALPHABET/" + x })
+
+        })
+        console.log(" sound_correct_spelling:", sound_correct_spelling)
+        return (sound_list)
+
+    }
+
+    playAnswerOK() {
+
     }
 }

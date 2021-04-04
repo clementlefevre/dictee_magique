@@ -16,11 +16,13 @@ import string
 import configparser
 import json
 import argparse
+import time
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ramon/keys/genuine-airfoil-280911-3f800825bda1.json"
+os.environ[
+    "GOOGLE_APPLICATION_CREDENTIALS"
+] = "/home/ramon/keys/genuine-airfoil-280911-3f800825bda1.json"
 
 # required arg
-
 
 
 parser = argparse.ArgumentParser()
@@ -29,6 +31,7 @@ parser.add_argument("--speech", required=False, action="store_true")
 parser.add_argument("--config", required=False, action="store_true")
 parser.add_argument("--alphabet", required=False, action="store_true")
 parser.add_argument("--numbers", required=False, action="store_true")
+parser.add_argument("--correct", required=False, action="store_true")
 parser.add_argument("--full", required=False, action="store_true")
 
 args = parser.parse_args()
@@ -39,6 +42,7 @@ client = texttospeech.TextToSpeechClient()
 
 
 def store_text(text_to_store, filename=None, folder=None):
+    time.sleep(2)
     print("text_to_store :")
     print(text_to_store)
 
@@ -60,7 +64,7 @@ def store_text(text_to_store, filename=None, folder=None):
 
     # Select the type of audio file you want returned
     audio_config = texttospeech.AudioConfig(
-        speaking_rate=0.65, audio_encoding=texttospeech.AudioEncoding.MP3
+        speaking_rate=0.9, audio_encoding=texttospeech.AudioEncoding.MP3
     )
 
     # Perform the text-to-speech request on the text input with the selected
@@ -116,6 +120,12 @@ def create_all_sounds():
                 store_text(v, k, s)
 
 
+# update specific section :
+def create_specific_sections():
+    for k, v in config["ANSWER_EXPLANATION"].items():
+        store_text(v, k, "ANSWER_EXPLANATION")
+
+
 if __name__ == "__main__":
     if args.alphabet:
         create_alphabet()
@@ -129,10 +139,15 @@ if __name__ == "__main__":
     if args.speech:
         create_all_sounds()
 
+    if args.correct:
+        create_specific_sections()
+
     if args.full:
         print("coucou")
         create_alphabet()
         create_numbers()
         create_all_sounds()
         create_config_json()
+
+    create_config_json()
 
