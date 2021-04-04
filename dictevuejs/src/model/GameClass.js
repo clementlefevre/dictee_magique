@@ -3,14 +3,21 @@ import configJson from "@/assets/config.json"
 import SoundService from "./SoundService";
 
 
+let status = {
+
+    score: 0,
+    level: 0,
+    username: "test"
+
+}
+
 export default class GameClass {
     constructor() {
 
         this.data = configJson["data"]
-
-
         this.sounds = new SoundService(this)
         this.allQuestions = Object.keys(this.data['QUESTIONS']);
+        this.status = status
     }
 
     getRandomIndex(family) {
@@ -38,7 +45,7 @@ export default class GameClass {
     checkAnswer(self, answer) {
         self.response = "█"
         console.log("answer is:", answer)
-        console.log("current question is:", this.currentQuestion)
+        console.log("current question is:", this.currentQuestion.text)
         if (answer === this.currentQuestion.text) {
             console.log("bonne reponse")
             this.askNextQuestion()

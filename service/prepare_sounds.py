@@ -17,7 +17,7 @@ import configparser
 import json
 import argparse
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ramon/keys/genuine-airfoil-280911-5cef51b50ad6.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/ramon/keys/genuine-airfoil-280911-3f800825bda1.json"
 
 # required arg
 
