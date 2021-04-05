@@ -42,7 +42,7 @@ client = texttospeech.TextToSpeechClient()
 
 
 def store_text(text_to_store, filename=None, folder=None):
-    time.sleep(2)
+    
     print("text_to_store :")
     print(text_to_store)
 
@@ -133,8 +133,6 @@ if __name__ == "__main__":
     if args.numbers:
         create_numbers()
 
-    if args.config:
-        create_config_json()
 
     if args.speech:
         create_all_sounds()
@@ -143,7 +141,7 @@ if __name__ == "__main__":
         create_specific_sections()
 
     if args.full:
-        print("coucou")
+    
         create_alphabet()
         create_numbers()
         create_all_sounds()

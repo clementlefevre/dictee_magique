@@ -6,16 +6,18 @@
         white-space: pre;
         font-size: 18px;
         border-style: solid;
-        border-width: 0.5px;
+        border-width: 0px;
         padding: 2%;
-        margin: 100px;
+        margin: 0px;
         border-color: #0f0;
         text-align: center;
       "
       class="intro"
     >
-      {{ ibm }}
+      <img src="@/assets/HAL.png" />
+      <!--  {{ ibm }} -->
     </div>
+
     <div
       v-if="showBootText"
       style="
@@ -26,14 +28,14 @@
         padding: 2%;
         margin: 100px;
         border-color: #0f0;
-        text-align: center;
+        text-align: left;
       "
       class="intro"
     >
-      Score :{{ game.status.score }}
-      {{ "*".repeat(game.status.score) }}
+      Score : {{ game.status.score }}
+      {{ "&#9829;".repeat(game.status.score) }}
       <br />
-      Level :{{ game.status.level }}<br />
+      Level : {{ game.status.level }}<br />
 
       <div v-if="game.showResult" style="color: red">
         {{ game.result.toUpperCase() }}
@@ -53,7 +55,7 @@
       :showCursor="false"
       style="white-space: pre-line; font-size: 38px"
       :strings="[
-        '4096 KB OK ^2000\n `C>PATH C:\\C:\\DOS;` ^3000\n `C>KEYB US 437 C:\\DOS\\KEYBOARD.SYS` ^3000\n `IBM Personal Computer DOS Version 3.30` ^3000\n\n ` `',
+        '4096 KB OK ^2000\n `C>PATH C:\\  C:\\DOS;` ^3000\n `C>KEYB US 437 C:\\DOS\\KEYBOARD.SYS` ^3000\n `IBM Personal Computer DOS Version 3.30` ^3000\n\n ` `',
       ]"
       @onStart="playBoot()"
       ><div class="typing"></div>
@@ -91,7 +93,7 @@ const restrictions = ">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ▌";
 
 export default {
   name: "App",
-  data: function () {
+  data: function() {
     return {
       introText: "",
       ibm:
@@ -111,7 +113,7 @@ export default {
   components: {},
 
   watch: {
-    result: function () {},
+    result: function() {},
   },
   computed: {},
   methods: {
@@ -130,7 +132,7 @@ export default {
         elem.msRequestFullscreen();
       }
     },
-    startGame: function () {
+    startGame: function() {
       console.log("startGame");
       this.playBoot();
       //this.openFullscreen();
@@ -150,13 +152,16 @@ export default {
       this.game.startGame();
     },
 
-    addBar: function () {
-      this.response = this.response.replace("█", "").concat("█").toUpperCase();
+    addBar: function() {
+      this.response = this.response
+        .replace("█", "")
+        .concat("█")
+        .toUpperCase();
     },
-    test: function () {
+    test: function() {
       this.response = this.response.slice(0, -2).concat("█");
     },
-    isLetter: function (e) {
+    isLetter: function(e) {
       console.log("typed :", e.keyCode);
       if (e.keyCode == 13) {
         console.log("pressed enter");
