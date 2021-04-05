@@ -20,7 +20,7 @@
       v-if="showBootText"
       style="
         white-space: pre;
-        font-size: 18px;
+        font-size: 48px;
         border-style: solid;
         border-width: 0.5px;
         padding: 2%;
@@ -30,8 +30,14 @@
       "
       class="intro"
     >
-      Score :{{ game.status.score }} <br />
-      Level :{{ game.status.level }}
+      Score :{{ game.status.score }}
+      {{ "*".repeat(game.status.score) }}
+      <br />
+      Level :{{ game.status.level }}<br />
+
+      <div v-if="game.showResult" style="color: red">
+        {{ game.result.toUpperCase() }}
+      </div>
     </div>
     <input
       v-if="showStart"
@@ -45,7 +51,7 @@
       v-if="showBootText"
       class="intro"
       :showCursor="false"
-      style="white-space: pre-line; font-size: 18px"
+      style="white-space: pre-line; font-size: 38px"
       :strings="[
         '4096 KB OK ^2000\n `C>PATH C:\\C:\\DOS;` ^3000\n `C>KEYB US 437 C:\\DOS\\KEYBOARD.SYS` ^3000\n `IBM Personal Computer DOS Version 3.30` ^3000\n\n ` `',
       ]"
@@ -54,7 +60,7 @@
     </vue-typed-js>
 
     <div class="row" style="margin-left: 100px" v-if="showInput">
-      <span style="color: #0f0"> C:\></span>
+      <span style="color: #0f0; font-size: 38px"> C:\></span>
       <span>
         <input
           type="text"
@@ -62,7 +68,7 @@
           class="intro"
           style="
             white-space: pre-line;
-            font-size: 18px;
+            font-size: 38px;
             padding: 0px;
             margin: 0px;
           "

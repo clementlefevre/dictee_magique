@@ -19,6 +19,8 @@ export default class GameClass {
         this.sounds = new SoundService(this)
         this.allQuestions = Object.keys(this.data['QUESTIONS']);
         this.status = status
+        this.showResult = false
+        this.result = "--->"
     }
 
     getRandomIndex(family) {
@@ -37,6 +39,7 @@ export default class GameClass {
     setQuestion() {
         let currentQuestionKey = this.allQuestions.shift();
         this['currentQuestion'] = this.data["QUESTIONS"][currentQuestionKey]
+        this.status.retry = 0
 
     }
     startGame() {
@@ -47,9 +50,9 @@ export default class GameClass {
 
         self.response = "█"
         console.log("answer is:", answer)
-        console.log("current question is:", this.currentQuestion.text)
+        console.log("current question is:", this.currentQuestion['text'])
         if (answer === this.currentQuestion.text) {
-            this.sounds.playAnswerOK()
+
             this.askNextQuestion()
             this.status.score++
         } else {
