@@ -17,6 +17,7 @@
       <img src="@/assets/HAL.png" />
       <!--  {{ ibm }} -->
     </div>
+    {{ currentLevel }}
 
     <div
       v-if="showBootText"
@@ -36,6 +37,7 @@
       {{ "&#9829;".repeat(game.status.score) }}
       <br />
       Level : {{ game.status.level }}<br />
+      <div @click="changeLevel">+</div>
 
       <div v-if="game.showResult" style="color: red">
         {{ game.result.toUpperCase() }}
@@ -70,7 +72,7 @@
           class="intro"
           style="
             white-space: pre-line;
-            font-size: 38px;
+            font-size: 88px;
             padding: 0px;
             margin: 0px;
           "
@@ -95,6 +97,7 @@ export default {
   name: "App",
   data: function() {
     return {
+      currentLevel: 0,
       introText: "",
       ibm:
         "██╗██████╗ ███╗   ███╗\n ██║██╔══██╗████╗ ████║\n ██║██████╔╝██╔████╔██║\n ██║██╔══██╗██║╚██╔╝██║\n ██║██████╔╝██║ ╚═╝ ██║\n  ╚═╝╚═════╝ ╚═╝     ╚═╝",
@@ -117,6 +120,15 @@ export default {
   },
   computed: {},
   methods: {
+    changeLevel: function() {
+      if (this.game.status.level < 5) {
+        this.game.setNewGame(this.game.status.level + 1);
+      } else {
+        this.game.setNewGame(0);
+      }
+
+      this.game.startGame();
+    },
     openFullscreen() {
       var elem = document.getElementById("app");
       if (elem.requestFullscreen) {
@@ -226,7 +238,7 @@ body {
 }
 .intro {
   font-family: "Px437", sans-serif !important;
-  font-size: 18px;
+  font-size: 48px;
   color: #0f0;
   background-color: black;
   caret-color: black;

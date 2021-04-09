@@ -109,7 +109,7 @@ export default class SoundService {
     let soundBeepNOK = { text: "beepOK", url: "SOUNDS/s_2" };
     let soundWrong = this.setSound("ANSWERS_NOK");
 
-    if (this.game.status.retry == 1) {
+    if (this.game.status.retry == 3) {
       let soundCorrectAnswer = this.playCorrectAnswer();
       let soundQuestionText = this.game["currentQuestion"];
 

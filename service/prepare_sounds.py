@@ -95,6 +95,7 @@ config.read("text_content.ini")
 
 def create_config_json():
     with open("config.json", "w") as fp:
+        print(config._sections)
         json.dump({"data": config._sections}, fp)
 
 
@@ -106,9 +107,9 @@ def create_alphabet():
 
 # create number :
 def create_numbers():
-    number_questions = len(config["QUESTIONS"])
-    print(range(1, number_questions)[-1])
-    for i in range(number_questions):
+    #number_questions = len(config["QUESTIONS"])
+    
+    for i in range(100):
         store_text(str(i + 1), folder="NUMBER")
 
 
@@ -124,6 +125,11 @@ def create_all_sounds():
 def create_specific_sections():
     for k, v in config["ANSWER_EXPLANATION"].items():
         store_text(v, k, "ANSWER_EXPLANATION")
+
+    for k, v in config["QUESTIONS_LEVEL_4"].items():
+        store_text(v, k, "QUESTIONS_LEVEL_4")
+    for k, v in config["QUESTIONS_LEVEL_5"].items():
+        store_text(v, k, "QUESTIONS_LEVEL_5") 
 
 
 if __name__ == "__main__":

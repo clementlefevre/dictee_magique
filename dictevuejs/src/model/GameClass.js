@@ -23,9 +23,16 @@ export default class GameClass {
   constructor() {
     this.data = configJson["data"];
     this.sounds = new SoundService(this);
-    this.allQuestions = Object.keys(this.data["QUESTIONS_LEVEL_1"]);
+    this.setNewGame(0);
+  }
+
+  setNewGame(level) {
+    this.allQuestions = Object.keys(
+      this.data["QUESTIONS_LEVEL_" + level.toString()]
+    );
     shuffleArray(this.allQuestions);
     this.status = status;
+    this.status.level = level;
     this.showResult = false;
     this.result = "";
   }
@@ -43,9 +50,9 @@ export default class GameClass {
 
   setQuestion() {
     let currentQuestionKey = this.allQuestions.shift();
-    this["currentQuestion"] = this.data["QUESTIONS_LEVEL_1"][
-      currentQuestionKey
-    ];
+    this["currentQuestion"] = this.data[
+      "QUESTIONS_LEVEL_" + this.status.level.toString()
+    ][currentQuestionKey];
     this.status.retry = 0;
   }
   startGame() {
@@ -87,5 +94,5 @@ export default class GameClass {
     console.log("key :", key);
   }
 
-  playQuestion() {}
+  s;
 }
