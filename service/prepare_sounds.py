@@ -13,7 +13,6 @@ Note: ssml must be well-formed according to:
 import os
 from google.cloud import texttospeech
 import string
-import configparser
 import json
 import argparse
 import time
@@ -22,6 +21,11 @@ os.environ[
     "GOOGLE_APPLICATION_CREDENTIALS"
 ] = "/home/ramon/keys/genuine-airfoil-280911-3f800825bda1.json"
 
+
+
+with open('config.json') as json_file:
+    config = json.load(json_file)
+  
 # required arg
 
 
@@ -33,6 +37,7 @@ parser.add_argument("--alphabet", required=False, action="store_true")
 parser.add_argument("--numbers", required=False, action="store_true")
 parser.add_argument("--correct", required=False, action="store_true")
 parser.add_argument("--full", required=False, action="store_true")
+parser.add_argument("--action='store', type=str, help='The text to parse.')
 
 args = parser.parse_args()
 
@@ -82,21 +87,6 @@ def store_text(text_to_store, filename=None, folder=None):
         # Write the response to the output file.
         out.write(response.audio_content)
         print(f"Audio content written to file {filename}")
-
-
-def read_config_file():
-    config = configparser.ConfigParser()
-    config.read("text_content.ini")
-
-
-config = configparser.ConfigParser()
-config.read("text_content.ini")
-
-
-def create_config_json():
-    with open("config.json", "w") as fp:
-        print(config._sections)
-        json.dump({"data": config._sections}, fp)
 
 
 # create alphabet
@@ -151,7 +141,3 @@ if __name__ == "__main__":
         create_alphabet()
         create_numbers()
         create_all_sounds()
-        create_config_json()
-
-    create_config_json()
-
