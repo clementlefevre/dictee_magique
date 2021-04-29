@@ -1,4 +1,4 @@
-export default class SoundClass {
+/* export default class SoundClass {
   constructor(category, item_id) {
     this.text = text;
     this.filename = category + "/" + name + ".mp3";
@@ -16,3 +16,4 @@ export default class SoundClass {
     return audio;
   }
 }
+ */

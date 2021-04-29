@@ -23,6 +23,9 @@
       "answer_1": "C est inexact, l' orthographe de",
       "answer_2": "est"
     },
+    "ASK_PLAYER_NAME": {
+      "ask_name_1": "Comment t appelles-tu ?"
+    },
     "INTRO": {
       "intro_1": "\u00e9cris le mot",
       "intro_2": "Tape sur le clavier le mot",

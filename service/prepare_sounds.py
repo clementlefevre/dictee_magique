@@ -13,6 +13,7 @@ Note: ssml must be well-formed according to:
 import os
 from google.cloud import texttospeech
 import string
+from pathlib import Path
 import json
 import argparse
 import time
@@ -23,7 +24,7 @@ os.environ[
 
 
 
-with open('config.json') as json_file:
+with open('./app/src/assets/config.json') as json_file:
     config = json.load(json_file)
   
 # required arg
@@ -36,8 +37,9 @@ parser.add_argument("--config", required=False, action="store_true")
 parser.add_argument("--alphabet", required=False, action="store_true")
 parser.add_argument("--numbers", required=False, action="store_true")
 parser.add_argument("--correct", required=False, action="store_true")
+parser.add_argument("--prenoms", required=False, action="store_true")
 parser.add_argument("--full", required=False, action="store_true")
-parser.add_argument("--action='store', type=str, help='The text to parse.')
+parser.add_argument("--action='store', type=str, help='The text to parse.'")
 
 args = parser.parse_args()
 
@@ -102,6 +104,22 @@ def create_numbers():
     for i in range(100):
         store_text(str(i + 1), folder="NUMBER")
 
+def create_prenoms():
+    p = Path("./data/sounds/PRENOMS").glob('**/*')
+    files = [x.stem for x in p if x.is_file()]
+    with open('./app/src/assets/prenoms.json') as json_file:
+        prenoms = json.load(json_file)["Prenoms"]
+        prenoms_dic = {k.lower():k for k in prenoms.values()}
+        with open('./app/src/assets/prenoms_dict.json', 'w') as fp:
+            json.dump(prenoms_dic, fp)
+        for k, v in prenoms_dic.items():
+            if k not in files:
+                try:
+                    store_text(v, k, "PRENOMS")
+                    time.sleep(2)
+                except Exception as e:
+                    print(f"Could not get prenom for {v}\ne")
+       
 
 # create all sounds :
 def create_all_sounds():
@@ -135,6 +153,9 @@ if __name__ == "__main__":
 
     if args.correct:
         create_specific_sections()
+
+    if args.prenoms:
+        create_prenoms()
 
     if args.full:
     

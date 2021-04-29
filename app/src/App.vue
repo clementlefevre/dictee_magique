@@ -89,30 +89,8 @@
 </template>
 
 <script>
-const levenshtein = require("js-levenshtein");
-
 import Game from "./model/Game";
 
-var t0 = performance.now();
-
-import Prenoms from "@/assets/prenoms.json";
-let prenoms = Object.values(Prenoms["Prenoms"]);
-console.log(prenoms);
-let nearestName = "";
-let minDistance = 10;
-prenoms.map((x) => {
-  let levDist = levenshtein(x.toLowerCase(), "basile");
-
-  if (levDist < minDistance) {
-    minDistance = levDist;
-    nearestName = x;
-    console.log("found nearest name ", x, levDist);
-  }
-});
-console.log(nearestName);
-
-var t1 = performance.now();
-console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
 const restrictions = ">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ▌";
 
 export default {

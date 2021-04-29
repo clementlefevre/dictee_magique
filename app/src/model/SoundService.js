@@ -19,6 +19,14 @@ export default class SoundService {
     });
   }
 
+  addPlayerNameSound(gameClass) {
+    gameClass.playerNameSound = {
+      text: gameClass.playerName,
+      url: "PRENOMS" + "/" + gameClass.playerName.toLowerCase(),
+    };
+    console.log("PlayerNameSound :", gameClass.playerNameSound);
+  }
+
   initSoundUrls(gameClass) {
     const configGame = gameClass["data"];
     Object.keys(configGame).forEach((category) => {
@@ -63,6 +71,7 @@ export default class SoundService {
       });
       sound.play();
     }
+    console.log("soundList : ", soundList);
     play_audio(soundList);
   }
 
@@ -95,7 +104,13 @@ export default class SoundService {
     let soundOK = this.setSound("ANSWERS_OK");
     let soundIntro = this.setSound("INTRO");
     let soundQuestion = this.game["currentQuestion"];
-    let sounds = [soundBeepOk, soundOK, soundIntro, soundQuestion];
+    let sounds = [
+      this.game.playerNameSound,
+      soundBeepOk,
+      soundOK,
+      soundIntro,
+      soundQuestion,
+    ];
     this.game.currentQuestion["sounds"] = sounds;
     this.playList(sounds);
   }
