@@ -19,12 +19,12 @@ export default class SoundService {
     });
   }
 
-  addPlayerNameSound(gameClass) {
-    gameClass.playerNameSound = {
-      text: gameClass.playerName,
-      url: "PRENOMS" + "/" + gameClass.playerName.toLowerCase(),
+  addPlayerNameSound() {
+    this.game.playerNameSound = {
+      text: this.game.playerName,
+      url: "PRENOMS" + "/" + this.game.playerName.toLowerCase(),
     };
-    console.log("PlayerNameSound :", gameClass.playerNameSound);
+    console.log("PlayerNameSound :", this.game.playerNameSound);
   }
 
   initSoundUrls(gameClass) {
@@ -87,11 +87,22 @@ export default class SoundService {
     return this.game.data[category][item];
   }
 
+  askForPlayerName() {
+    let sound1 = this.setSound("ASK_PLAYER_NAME");
+    this.playList([sound1]);
+  }
+
   playGreeting() {
-    let sound1 = this.setSound("GREETINGS");
-    let sound2 = this.setSound("INTRO");
-    let sound3 = this.game["currentQuestion"];
-    let sounds = [sound1, sound2, sound3];
+    let s0 = this.setSound("GREETINGS_1");
+    let s1 = this.game.playerNameSound;
+    let s2 = this.setSound("GREETINGS_2");
+    let s3 = this.setSound("INTRO");
+    let s4 = this.game["currentQuestion"];
+    let sounds = [s0, s1, s2, s3, s4];
+    console.log(
+      "playGreeting -- this.game[currentQuestion]",
+      this.game["currentQuestion"]
+    );
     this.playList(sounds);
   }
 

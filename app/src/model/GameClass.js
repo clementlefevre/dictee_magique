@@ -1,8 +1,8 @@
 const levenshtein = require("js-levenshtein");
-import configJson from "@/assets/config.json";
+import configJson from "@/assets/text/text_content.json";
 import SoundService from "./SoundService";
 
-import Prenoms from "@/assets/prenoms.json";
+import Prenoms from "@/assets/text/prenoms.json";
 
 let status = {
   score: 0,
@@ -28,7 +28,12 @@ export default class GameClass {
     this.setNewGame(0);
   }
 
+  startGame() {
+    this.sounds.askForPlayerName();
+  }
+
   setNewGame(level) {
+    console.log("coucou");
     this.allQuestions = Object.keys(
       this.data["QUESTIONS_LEVEL_" + level.toString()]
     );
@@ -42,10 +47,8 @@ export default class GameClass {
   }
 
   getPlayerName(inputName) {
-    var t0 = performance.now();
+    let prenoms = Object.values(Prenoms);
 
-    let prenoms = Object.values(Prenoms["Prenoms"]);
-    console.log(prenoms);
     let nearestName = "";
     let minDistance = 10;
     prenoms.map((x) => {
@@ -60,9 +63,8 @@ export default class GameClass {
     console.log(nearestName);
     this.playerName = nearestName;
     this.sounds.addPlayerNameSound(this);
-
-    var t1 = performance.now();
-    console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
+    this.setQuestion();
+    this.sounds.playGreeting();
   }
 
   getRandomIndex(family) {
@@ -82,19 +84,16 @@ export default class GameClass {
       "QUESTIONS_LEVEL_" + this.status.level.toString()
     ][currentQuestionKey];
     this.status.retry = 0;
+    console.log("this.status.level : ", this.status.level);
+    console.log("setQuestion - --this.currentQuestion :", this.currentQuestion);
   }
-  startGame() {
-    this.setQuestion();
-    this.sounds.playGreeting();
-  }
+
   checkAnswer(self, answer) {
     self.response = "█";
-    console.log("answer is:", answer);
-    console.log("current question is:", this.currentQuestion["text"]);
 
     if (this.playerName == "") {
-      console.log("player name is :", answer);
       this.getPlayerName(answer);
+      return;
     }
     if (
       answer ===
@@ -121,9 +120,4 @@ export default class GameClass {
       this.sounds.playNextQuestion();
     }
   }
-
-  /* getRandomGreetingSound() {
-    let key = this.getRandomProperty("GREETINGS");
-    console.log("key :", key);
-  } */
 }

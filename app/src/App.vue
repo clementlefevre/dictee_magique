@@ -14,8 +14,7 @@
       "
       class="intro"
     >
-      <img src="@/assets/HAL.png" />
-      <!--  {{ ibm }} -->
+      <img src="@/assets/media/HAL.png" />
     </div>
     {{ currentLevel }}
 
@@ -99,8 +98,6 @@ export default {
     return {
       currentLevel: 0,
       introText: "",
-      ibm:
-        "██╗██████╗ ███╗   ███╗\n ██║██╔══██╗████╗ ████║\n ██║██████╔╝██╔████╔██║\n ██║██╔══██╗██║╚██╔╝██║\n ██║██████╔╝██║ ╚═╝ ██║\n  ╚═╝╚═════╝ ╚═╝     ╚═╝",
       response: "█",
       lastKey: "",
       status: "",
@@ -176,8 +173,6 @@ export default {
     isLetter: function(e) {
       console.log("typed :", e.keyCode);
       if (e.keyCode == 13) {
-        console.log("pressed enter");
-        console.log("response", this.response);
         this.game.checkAnswer(
           this,
           this.response.replace("█", "").toLowerCase()
@@ -186,7 +181,6 @@ export default {
         return;
       }
       if (e.keyCode == 32) {
-        console.log("pressed SPACE");
         this.game.repeatQuestion();
         return;
       }
