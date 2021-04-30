@@ -6,4 +6,4 @@ la dictee magique !
 - edit an existing file (e.g. `7.txt`) or create a new one.
 - type the list of words and save it using the naming rule : *level number*.txt ,for example `8.txt`.
 - save and commit the file.
-- the current static webpage located [https://ladicteemagique.s3.amazonaws.com/index.html](https://ladicteemagique.s3.amazonaws.com/index.html) will be updated within 5 minutes.
+- the current static webpage located [https://ladicteemagique.s3.amazonaws.com/index.html](https://ladicteemagique.s3.amazonaws.com/index.html) is then automatically updated within 5 minutes.
