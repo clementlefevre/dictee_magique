@@ -1,10 +1,10 @@
 __pycache__/
 .vscode/
 *.pyc
-env/
-dist/
-node_modules/
-.babelrc
-package-lock.json
+
+app/dist/
+app/node_modules/
+app/.babelrc
+app/package-lock.json
 app/yarn.lock
-app/yarn.lock
+

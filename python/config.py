@@ -5,6 +5,12 @@ os.environ[
     "GOOGLE_APPLICATION_CREDENTIALS"
 ] = "/home/ramon/keys/genuine-airfoil-280911-3f800825bda1.json"
 
+os.environ[
+    "GOOGLE_APPLICATION_CREDENTIALS"
+] = "./keys/genuine-airfoil-280911-3f800825bda1.json"
+
+os.environ["AWS_SHARED_CREDENTIALS_FILE"]="./keys/credentials"
+
 
 ASSETS_FOLDER  = "./app/src/assets/"
 

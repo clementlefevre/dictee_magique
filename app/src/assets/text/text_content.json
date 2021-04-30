@@ -47,7 +47,6 @@
     "score_infos_2_2": "points. Il faut continuer comme \u00e7a.",
     "score_infos_2_3": "points. Encore un petit effort."
   },
-
   "JOKES": {
     "joke_1": "Savais-tu qu\u00b4il y a une cam\u00e9ra dans le micro-onde qui envoie une photo aux Chinois \u00e0 chaque fois que tu prends des bonbons dans le tiroir ?",
     "joke_2": "Tu m\u00b4impressionnes \u00e9norm\u00e9ment ! Maintenant, sois gentil avec moi et  tape le num\u00e9ro de la carte Visa de ton papa, ainsi que sa date de validit\u00e9 et le num\u00e9ro indiqu\u00e9 au dos. Tu es vraiment gentil tu sais.",
@@ -589,5 +588,13 @@
     "s_4": "keyboard_enter",
     "s_5": "keyboard_key2",
     "s_6": "floppy_drive1"
+  },
+  "QUESTIONS_LEVEL_8": {
+    "q_0": "imprimante",
+    "q_1": "couleur",
+    "q_2": "papier",
+    "q_3": "laser",
+    "q_4": "souris",
+    "q_5": "ecran"
   }
 }
