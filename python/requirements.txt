@@ -1,26 +1,50 @@
-cachetools==4.2.2
-certifi==2020.12.5
-chardet==4.0.0
-google-api-core==1.26.3
-google-auth==1.30.0
-google-cloud-texttospeech==2.3.0
-googleapis-common-protos==1.53.0
-grpcio==1.37.1
-idna==2.10
-mkl-fft==1.3.0
-mkl-random==1.1.1
-mkl-service==2.3.0
-numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1603487797006/work
-packaging==20.9
-pandas @ file:///tmp/build/80754af9/pandas_1602088135163/work
-proto-plus==1.18.1
-protobuf==3.15.8
-pyasn1==0.4.8
-pyasn1-modules==0.2.8
-pyparsing==2.4.7
-python-dateutil @ file:///home/ktietz/src/ci/python-dateutil_1611928101742/work
-pytz @ file:///tmp/build/80754af9/pytz_1612215392582/work
-requests==2.25.1
-rsa==4.7.2
-six @ file:///tmp/build/80754af9/six_1605205335545/work
-urllib3==1.26.4
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+_libgcc_mutex=0.1=main
+blas=1.0=mkl
+ca-certificates=2021.4.13=h06a4308_1
+cachetools=4.2.2=pypi_0
+certifi=2020.12.5=py36h06a4308_0
+chardet=4.0.0=pypi_0
+google-api-core=1.26.3=pypi_0
+google-auth=1.30.0=pypi_0
+google-cloud-texttospeech=2.3.0=pypi_0
+googleapis-common-protos=1.53.0=pypi_0
+grpcio=1.37.1=pypi_0
+idna=2.10=pypi_0
+intel-openmp=2021.2.0=h06a4308_610
+ld_impl_linux-64=2.33.1=h53a641e_7
+libffi=3.3=he6710b0_2
+libgcc-ng=9.1.0=hdf63c60_0
+libstdcxx-ng=9.1.0=hdf63c60_0
+mkl=2020.2=256
+mkl-service=2.3.0=py36he8ac12f_0
+mkl_fft=1.3.0=py36h54f3939_0
+mkl_random=1.1.1=py36h0573a6f_0
+ncurses=6.2=he6710b0_1
+numpy=1.19.2=py36h54aff64_0
+numpy-base=1.19.2=py36hfa32c7d_0
+openssl=1.1.1k=h27cfd23_0
+packaging=20.9=pypi_0
+pandas=1.1.3=py36he6710b0_0
+pip=21.0.1=py36h06a4308_0
+proto-plus=1.18.1=pypi_0
+protobuf=3.15.8=pypi_0
+pyasn1=0.4.8=pypi_0
+pyasn1-modules=0.2.8=pypi_0
+pyparsing=2.4.7=pypi_0
+python=3.6.13=hdb3f193_0
+python-dateutil=2.8.1=pyhd3eb1b0_0
+pytz=2021.1=pyhd3eb1b0_0
+readline=8.1=h27cfd23_0
+requests=2.25.1=pypi_0
+rsa=4.7.2=pypi_0
+setuptools=52.0.0=py36h06a4308_0
+six=1.15.0=py36h06a4308_0
+sqlite=3.35.4=hdfb4753_0
+tk=8.6.10=hbc83047_0
+urllib3=1.26.4=pypi_0
+wheel=0.36.2=pyhd3eb1b0_0
+xz=5.2.5=h7b6447c_0
+zlib=1.2.11=h7b6447c_3
