@@ -1,4 +1,5 @@
 pip install  --ignore-installed -r python/requirements.txt &&
+pip install numpy --upgrade &&
 sudo apt-get install nodejs awscli &&
 python python/update_questions.py &&
 npm install --global yarn && 
