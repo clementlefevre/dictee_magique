@@ -40,8 +40,8 @@ jobs:
       - run: cd app && yarn install && yarn build && cd ..
       - uses: jakejarvis/s3-sync-action@master
         env:
-          AWS_S3_BUCKET: ladicteemagique
-          AWS_ACCESS_KEY_ID: AKIAJY6DSZMQFTKSD5WA
-          AWS_SECRET_ACCESS_KEY: OYJq7EOE1ZtPuroChr5ZJ8EACdtjM1
+          AWS_S3_BUCKET: "ladicteemagique"
+          AWS_ACCESS_KEY_ID: "AKIAJY6DSZMQFTKSD5WA"
+          AWS_SECRET_ACCESS_KEY: "OYJq7EOE1ZtPuroChr5ZJ8EACdtjM1"
           AWS_REGION: "us-east-1" # optional: defaults to us-east-1
           SOURCE_DIR: "app/dist" # optional: defaults to entire repository
