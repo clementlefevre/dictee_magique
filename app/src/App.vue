@@ -144,8 +144,8 @@ export default {
     },
     playBoot() {
       console.log("playBoot");
-      var audio = new Audio(require("@/assets/sounds/ALPHABET/x.mp3"));
-      //var audio = new Audio(require("@/assets/sounds/boot.mp3"));
+      //var audio = new Audio(require("@/assets/sounds/ALPHABET/x.mp3"));
+      var audio = new Audio(require("@/assets/sounds/boot.mp3"));
       audio.play();
       audio.addEventListener("ended", this.handleEnded);
     },
