@@ -1,5 +1,5 @@
 const levenshtein = require("js-levenshtein");
-import configJson from "@/assets/text/text_content.json";
+import textContent from "@/assets/text/text_content.json";
 import SoundService from "./SoundService";
 
 import Prenoms from "@/assets/text/prenoms.json";
@@ -21,9 +21,18 @@ function shuffleArray(array) {
   }
 }
 
+function getLevelsCount(game) {
+  let levels = Object.keys(game.data).filter((x) =>
+    x.includes("QUESTIONS_LEVEL_")
+  );
+  return levels.length;
+}
+
 export default class GameClass {
   constructor() {
-    this.data = configJson["data"];
+    this.data = textContent;
+    this.levelsCount = getLevelsCount(this);
+
     this.sounds = new SoundService(this);
     this.setNewGame(0);
   }
@@ -67,6 +76,16 @@ export default class GameClass {
     this.sounds.playGreeting();
   }
 
+  changeLevel() {
+    if (this.status.level < this.levelsCount - 1) {
+      this.setNewGame(this.status.level + 1);
+    } else {
+      this.setNewGame(0);
+    }
+
+    this.startGame();
+  }
+
   getRandomIndex(family) {
     const length = Object.keys(this.data[family]).length;
     const urlSoundIndex = Math.floor(Math.random() * length);
@@ -76,6 +95,10 @@ export default class GameClass {
   getRandomProperty(family) {
     var keys = Object.keys(this.data[family]);
     return keys[Math.floor(Math.random() * keys.length)];
+  }
+
+  getRandomNumber(max) {
+    return Math.floor(Math.random() * max);
   }
 
   setQuestion() {
@@ -111,7 +134,6 @@ export default class GameClass {
     this.sounds.playCurrentQuestion();
   }
   askNextQuestion() {
-    console.log(this.allQuestions.length);
     if (this.allQuestions.length < 1) {
       console.log("FINISHED !");
       this.sounds.playWin();

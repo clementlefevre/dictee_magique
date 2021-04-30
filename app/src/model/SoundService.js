@@ -9,7 +9,6 @@ export default class SoundService {
   addAlphabetSounds(gameClass) {
     let allLetters = "abcdefghijklmnopqrstuvwxyz".split("");
     gameClass.data["ALPHABET"] = {};
-    console.log("gameClass.data : ", gameClass.data);
 
     allLetters.forEach((letter) => {
       gameClass.data["ALPHABET"][letter] = {
@@ -24,7 +23,6 @@ export default class SoundService {
       text: this.game.playerName,
       url: "PRENOMS" + "/" + this.game.playerName.toLowerCase(),
     };
-    console.log("PlayerNameSound :", this.game.playerNameSound);
   }
 
   initSoundUrls(gameClass) {
@@ -71,7 +69,7 @@ export default class SoundService {
       });
       sound.play();
     }
-    console.log("soundList : ", soundList);
+
     play_audio(soundList);
   }
 
@@ -99,10 +97,7 @@ export default class SoundService {
     let s3 = this.setSound("INTRO");
     let s4 = this.game["currentQuestion"];
     let sounds = [s0, s1, s2, s3, s4];
-    console.log(
-      "playGreeting -- this.game[currentQuestion]",
-      this.game["currentQuestion"]
-    );
+
     this.playList(sounds);
   }
 
@@ -111,17 +106,21 @@ export default class SoundService {
   }
 
   playNextQuestion() {
+    let sounds = [];
     let soundBeepOk = { text: "beepOK", url: "SOUNDS/s_1" };
     let soundOK = this.setSound("ANSWERS_OK");
+
+    let soundJoke = this.setSound("JOKES");
+
     let soundIntro = this.setSound("INTRO");
     let soundQuestion = this.game["currentQuestion"];
-    let sounds = [
-      this.game.playerNameSound,
-      soundBeepOk,
-      soundOK,
-      soundIntro,
-      soundQuestion,
-    ];
+
+    if (this.game.getRandomNumber(5) == 5) {
+      sounds = [soundBeepOk, soundOK, soundJoke, soundIntro, soundQuestion];
+    } else {
+      sounds = [soundBeepOk, soundOK, soundIntro, soundQuestion];
+    }
+
     this.game.currentQuestion["sounds"] = sounds;
     this.playList(sounds);
   }

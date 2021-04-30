@@ -35,8 +35,8 @@
       Score : {{ game.status.score }}
       {{ "&#9829;".repeat(game.status.score) }}
       <br />
-      Level : {{ game.status.level }}<br />
-      <div @click="changeLevel">+</div>
+      Level : {{ game.status.level }}
+      <span @click="changeLevel">+</span>
 
       <div v-if="game.showResult" style="color: red">
         {{ game.result.toUpperCase() }}
@@ -46,8 +46,8 @@
       v-if="showStart"
       class="intro"
       ref="start"
-      v-on:keypress.enter="startGame"
-      value="START"
+      @click="startGame"
+      value="CLICK HERE !"
     />
 
     <vue-typed-js
@@ -118,13 +118,7 @@ export default {
   computed: {},
   methods: {
     changeLevel: function() {
-      if (this.game.status.level < 5) {
-        this.game.setNewGame(this.game.status.level + 1);
-      } else {
-        this.game.setNewGame(0);
-      }
-
-      this.game.startGame();
+      this.game.changeLevel();
     },
     openFullscreen() {
       var elem = document.getElementById("app");

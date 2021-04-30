@@ -1,4 +1,5 @@
 import os
+import json
 
 os.environ[
     "GOOGLE_APPLICATION_CREDENTIALS"
@@ -6,6 +7,11 @@ os.environ[
 
 
 ASSETS_FOLDER  = "./app/src/assets/"
+
+text_content = None
+
+with open(ASSETS_FOLDER+'text/text_content.json') as json_file:
+    text_content = json.load(json_file)
 
 
 
