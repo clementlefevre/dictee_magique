@@ -1,7 +1,7 @@
 la dictee magique !
 
 # How to update Questions
--  check the current levels of  questions *QUESTION_LEVEL_X* in `app/assets/text/text.content.json`.
+-  check the current levels of  questions *QUESTION_LEVEL_X* in `app/src/assets/text/text.content.json`.
 - go the the `/input` folder and either :
  - edit an existing file (e.g. 7.txt)
  - create new file, type the list of words and save it as for example `8.text` (*the level number*.txt)
