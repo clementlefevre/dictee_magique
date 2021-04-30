@@ -115,7 +115,7 @@ export default class SoundService {
     let soundIntro = this.setSound("INTRO");
     let soundQuestion = this.game["currentQuestion"];
 
-    if (this.game.getRandomNumber(5) == 5) {
+    if (this.game.getRandomNumber(5) == 4) {
       sounds = [soundBeepOk, soundOK, soundJoke, soundIntro, soundQuestion];
     } else {
       sounds = [soundBeepOk, soundOK, soundIntro, soundQuestion];
