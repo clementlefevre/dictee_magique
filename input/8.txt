@@ -1,6 +1,0 @@
-imprimante
-couleur
-papier
-laser
-souris
-ecran
