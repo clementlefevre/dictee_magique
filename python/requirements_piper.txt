@@ -1,0 +1,3 @@
+# Open-source TTS replacement for Google Cloud TTS
+# Install with: pip install -r requirements_piper.txt
+piper-tts>=2023.11.14
