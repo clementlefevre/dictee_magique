@@ -1,12 +1,12 @@
 <script>
-  import { onMount } from 'svelte';
-  import { gameEngine } from '$lib/engine/GameEngine.js';
+  import { onMount } from "svelte";
+  import { gameEngine } from "$lib/engine/GameEngine.js";
 
-  let { mode = 'playing' } = $props(); // 'askName' or 'playing'
+  let { mode = "playing" } = $props(); // 'askName' or 'playing'
 
   const { lastAnswerCorrect } = gameEngine;
 
-  let inputText = $state('');
+  let inputText = $state("");
   let inputEl;
   let shaking = $state(false);
   let flashing = $state(false);
@@ -18,27 +18,28 @@
   });
 
   function handleKeyDown(e) {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       const text = inputText.trim().toLowerCase();
       if (text.length === 0) return;
 
-      if (mode === 'askName') {
+      if (mode === "askName") {
         gameEngine.submitPlayerName(text);
       } else {
         gameEngine.checkAnswer(text);
       }
-      inputText = '';
+      inputText = "";
       return;
     }
 
-    if (e.key === ' ' && mode === 'playing') {
+    if (e.key === " " && mode === "playing") {
       e.preventDefault();
       gameEngine.repeatQuestion();
       return;
     }
 
-    if (e.key === 'Backspace') {
+    if (e.key === "Backspace") {
       return; // Let default behavior handle it
     }
 
@@ -49,7 +50,7 @@
     }
 
     // Play letter sound
-    if (mode === 'playing' && e.key !== ' ') {
+    if (mode === "playing" && e.key !== " ") {
       gameEngine.playLetterSound(e.key.toLowerCase());
     }
   }
@@ -59,10 +60,10 @@
     const result = $lastAnswerCorrect;
     if (result === false) {
       shaking = true;
-      setTimeout(() => shaking = false, 500);
+      setTimeout(() => (shaking = false), 500);
     } else if (result === true) {
       flashing = true;
-      setTimeout(() => flashing = false, 500);
+      setTimeout(() => (flashing = false), 500);
     }
   });
 
@@ -87,15 +88,24 @@
         class="text-input glow"
         placeholder=""
       />
-      <span class="display-text glow">{inputText.toUpperCase()}<span class="block-cursor pulse">█</span></span>
+      <span class="display-text glow"
+        >{inputText.toUpperCase()}<span class="block-cursor pulse">█</span
+        ></span
+      >
     </div>
   </div>
-  {#if mode === 'askName'}
-    <div class="hint glow" style="opacity: 0.5; font-size: var(--font-xs); margin-top: 8px; margin-left: 40px;">
+  {#if mode === "askName"}
+    <div
+      class="hint glow"
+      style="opacity: 0.5; font-size: var(--font-xs); margin-top: 8px; margin-left: 40px;"
+    >
       Tape ton prénom et appuie sur ENTRÉE
     </div>
   {:else}
-    <div class="hint glow" style="opacity: 0.4; font-size: var(--font-xs); margin-top: 8px; margin-left: 40px;">
+    <div
+      class="hint glow"
+      style="opacity: 0.4; font-size: var(--font-xs); margin-top: 8px; margin-left: 40px;"
+    >
       ENTRÉE = valider │ ESPACE = répéter la question
     </div>
   {/if}
@@ -149,7 +159,7 @@
   }
 
   .hint {
-    font-family: 'Px437', monospace;
+    font-family: "Px437", monospace;
     color: var(--green);
   }
 
@@ -162,13 +172,31 @@
   }
 
   @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-    20%, 40%, 60%, 80% { transform: translateX(4px); }
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+      transform: translateX(-4px);
+    }
+    20%,
+    40%,
+    60%,
+    80% {
+      transform: translateX(4px);
+    }
   }
 
   @keyframes flash-correct {
-    0% { background-color: rgba(0, 255, 0, 0.15); }
-    100% { background-color: transparent; }
+    0% {
+      background-color: rgba(0, 255, 0, 0.15);
+    }
+    100% {
+      background-color: transparent;
+    }
   }
 </style>

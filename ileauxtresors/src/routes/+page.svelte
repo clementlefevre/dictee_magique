@@ -1,281 +1,283 @@
 <script>
-  import { gameEngine, PHASES } from "$lib/engine/GameEngine.js";
-  import { soundEngine } from "$lib/engine/SoundEngine.js";
-  import BootScreen from "$lib/components/BootScreen.svelte";
-  import GameHUD from "$lib/components/GameHUD.svelte";
-  import CommandInput from "$lib/components/CommandInput.svelte";
-  import Mascot from "$lib/components/Mascot.svelte";
-  import VisualRewards from "$lib/components/VisualRewards.svelte";
-  import ProgressMap from "$lib/components/ProgressMap.svelte";
-  import MiniGame from "$lib/components/MiniGame.svelte";
-  import LevelComplete from "$lib/components/LevelComplete.svelte";
+    import { gameEngine, PHASES } from "$lib/engine/GameEngine.js";
+    import { soundEngine } from "$lib/engine/SoundEngine.js";
+    import {
+        CHALLENGE_MODES,
+        logicChallenges,
+        qcmChallenges,
+    } from "$lib/data/adventure";
+    import AdventureResult from "$lib/components/AdventureResult.svelte";
+    import BootScreen from "$lib/components/BootScreen.svelte";
+    import CalculChallenge from "$lib/components/CalculChallenge.svelte";
+    import ChoiceChallenge from "$lib/components/ChoiceChallenge.svelte";
+    import CommandInput from "$lib/components/CommandInput.svelte";
+    import GameHUD from "$lib/components/GameHUD.svelte";
+    import Mascot from "$lib/components/Mascot.svelte";
+    import MiniGame from "$lib/components/MiniGame.svelte";
+    import OverworldMap from "$lib/components/OverworldMap.svelte";
+    import ProgressMap from "$lib/components/ProgressMap.svelte";
+    import StartMenu from "$lib/components/StartMenu.svelte";
+    import VisualRewards from "$lib/components/VisualRewards.svelte";
 
-  const { phase, showResult, resultText, playerName } = gameEngine;
+    const {
+        phase,
+        showResult,
+        resultText,
+        playerName,
+        score,
+        rewards,
+        adventureNodes,
+        currentNodeIndex,
+        selectedNodeIndex,
+        unlockedNodeIndex,
+        currentChallengeNode,
+        challengeResult,
+        hasSave,
+    } = gameEngine;
 
-  let commandInputRef = $state(null);
-  let visualRewardsRef = $state(null);
+    let commandInputRef = $state(null);
 
-  async function handleStart() {
-    gameEngine.startGame();
-    await soundEngine.playBoot();
-    gameEngine.onBootComplete();
-  }
+    async function handleStart() {
+        await gameEngine.startNewAdventure();
+        soundEngine.playBoot();
+    }
 
-  function handleBootComplete() {
-    gameEngine.onBootComplete();
-  }
+    function handleBootComplete() {
+        gameEngine.onBootComplete();
+    }
 
-  function handleMiniGameComplete() {
-    gameEngine.goToNextLevel();
-  }
+    function handleContinue() {
+        gameEngine.continueAdventure();
+    }
 
-  function handleNextLevel() {
-    gameEngine.goToNextLevel();
-  }
+    function handleResetSave() {
+        gameEngine.clearAdventureSave();
+    }
 
-  function handleGoMiniGame() {
-    gameEngine.goToMiniGame();
-  }
+    function handleChallengeComplete(result) {
+        gameEngine.completeAdventureChallenge(result);
+    }
 
-  function handleRestart() {
-    gameEngine.restartGame();
-  }
+    function handleMiniGameComplete() {
+        gameEngine.continueFromResult();
+    }
 </script>
 
 <div class="game-container">
-  <!-- START SCREEN -->
-  {#if $phase === PHASES.START}
-    <div class="start-screen">
-      <div class="logo glow">
-        <pre class="ascii-art">
-╔═══════════════════════════════════════════╗
-║                                           ║
-║     ██╗      █████╗                       ║
-║     ██║     ██╔══██╗                      ║
-║     ██║     ███████║                      ║
-║     ██║     ██╔══██║                      ║
-║     ███████╗██║  ██║                      ║
-║     ╚══════╝╚═╝  ╚═╝                     ║
-║                                           ║
-║     DICTÉE MAGIQUE  v2.0                  ║
-║     ─────────────────                     ║
-║     Un jeu d'orthographe                  ║
-║     pour jeunes aventuriers               ║
-║                                           ║
-╚═══════════════════════════════════════════╝
+    {#if $phase === PHASES.START}
+        <StartMenu
+            hasSave={$hasSave}
+            onStart={handleStart}
+            onContinue={handleContinue}
+            onReset={handleResetSave}
+        />
+    {:else if $phase === PHASES.BOOT}
+        <BootScreen onComplete={handleBootComplete} />
+    {:else if $phase === PHASES.ASK_NAME}
+        <div class="name-screen slide-up">
+            <div class="name-header glow pixel-border">
+                <span class="glow-amber">ROBOT-CRT</span><br />
+                Comment t'appelles-tu, jeune pilote du clavier ?
+            </div>
+            <CommandInput bind:this={commandInputRef} mode="askName" />
+        </div>
+    {:else if $phase === PHASES.OVERWORLD}
+        <div class="adventure-hud pixel-border">
+            <span class="glow">{$playerName || "JOUEUR"}</span>
+            <span class="glow-amber">SCORE {$score}</span>
+            <span class="glow">TRESORS {$rewards.length}</span>
+        </div>
+        <OverworldMap
+            nodes={adventureNodes}
+            currentIndex={$currentNodeIndex}
+            unlockedIndex={$unlockedNodeIndex}
+            selectedIndex={$selectedNodeIndex}
+            onSelect={(index) => gameEngine.selectMapNode(index)}
+            onEnter={() => gameEngine.startSelectedChallenge()}
+        />
+    {:else if $phase === PHASES.CHALLENGE}
+        {#if $currentChallengeNode?.mode === CHALLENGE_MODES.DICTEE}
+            <div class="play-screen">
+                <div class="play-top">
+                    <div class="play-left">
+                        <GameHUD />
+                        <ProgressMap />
+                    </div>
+                    <div class="play-right">
+                        <Mascot />
+                    </div>
+                </div>
+                {#if $showResult}
+                    <div class="result-display glow-red">
+                        {$resultText.toUpperCase()}
+                    </div>
+                {/if}
+                <CommandInput bind:this={commandInputRef} mode="playing" />
+                <VisualRewards />
+            </div>
+        {:else if $currentChallengeNode?.mode === CHALLENGE_MODES.CALCUL}
+            <CalculChallenge
+                node={$currentChallengeNode}
+                onComplete={handleChallengeComplete}
+            />
+        {:else if $currentChallengeNode?.mode === CHALLENGE_MODES.LOGIC}
+            <ChoiceChallenge
+                node={$currentChallengeNode}
+                challenges={logicChallenges}
+                label="LOGIQUE ECO-RIGOLOTE"
+                onComplete={handleChallengeComplete}
+            />
+        {:else if $currentChallengeNode?.mode === CHALLENGE_MODES.QCM}
+            <ChoiceChallenge
+                node={$currentChallengeNode}
+                challenges={qcmChallenges}
+                label="CULTURE FRANCO-ALLEMANDE"
+                onComplete={handleChallengeComplete}
+            />
+        {/if}
+    {:else if $phase === PHASES.ADVENTURE_RESULT}
+        <AdventureResult
+            result={$challengeResult}
+            node={$currentChallengeNode}
+            onContinue={() => gameEngine.continueFromResult()}
+            onRestart={() => gameEngine.restartCurrentChallenge()}
+        />
+    {:else if $phase === PHASES.MINI_GAME}
+        <MiniGame onComplete={handleMiniGameComplete} />
+    {:else if $phase === PHASES.GAME_WON}
+        <div class="win-screen">
+            <div class="win-art glow-amber pixel-border">
+                <pre>
++--------------------------------------+
+|   FELICITATIONS, AVENTURIER !        |
+|   Tu as traverse toute l ile.        |
+|   Les mots brillent, les nombres     |
+|   ronronnent, et la planete sourit.  |
++--------------------------------------+
         </pre>
-      </div>
+            </div>
 
-      <button class="start-btn glow pulse" onclick={handleStart}>
-        ▶ APPUIE POUR COMMENCER ◀
-      </button>
-
-      <div
-        class="start-hint glow"
-        style="opacity: 0.4; font-size: var(--font-xs); margin-top: 20px;"
-      >
-        IBM Personal Computer • Système de Dictée v2.0
-      </div>
-
-      <a href="/kalkul" class="kalkul-link glow">
-        🧮 KALKUK — Entraînement calcul
-      </a>
-    </div>
-
-    <!-- BOOT SEQUENCE -->
-  {:else if $phase === PHASES.BOOT}
-    <BootScreen onComplete={handleBootComplete} />
-
-    <!-- ASK NAME -->
-  {:else if $phase === PHASES.ASK_NAME}
-    <div class="name-screen slide-up">
-      <div
-        class="name-header glow"
-        style="padding: 20px 40px; font-size: var(--font-md);"
-      >
-        ╔═══════════════════════════════╗<br />
-        ║ Comment t'appelles-tu ? ║<br />
-        ╚═══════════════════════════════╝
-      </div>
-      <CommandInput bind:this={commandInputRef} mode="askName" />
-    </div>
-
-    <!-- PLAYING -->
-  {:else if $phase === PHASES.PLAYING}
-    <div class="play-screen">
-      <div class="play-top">
-        <div class="play-left">
-          <GameHUD />
-          <ProgressMap />
+            <div class="win-name glow">
+                Bravo, {$playerName} ! Score final: {$score}
+            </div>
+            <button class="start-btn glow" onclick={handleResetSave}
+                >[ RECOMMENCER ]</button
+            >
         </div>
-        <div class="play-right">
-          <Mascot />
-        </div>
-      </div>
-
-      {#if $showResult}
-        <div
-          class="result-display glow-red"
-          style="padding: 12px 40px; font-size: var(--font-lg);"
-        >
-          {$resultText.toUpperCase()}
-        </div>
-      {/if}
-
-      <CommandInput bind:this={commandInputRef} mode="playing" />
-      <VisualRewards bind:this={visualRewardsRef} />
-    </div>
-
-    <!-- LEVEL COMPLETE -->
-  {:else if $phase === PHASES.LEVEL_COMPLETE}
-    <LevelComplete onContinue={handleNextLevel} onMiniGame={handleGoMiniGame} />
-
-    <!-- MINI GAME -->
-  {:else if $phase === PHASES.MINI_GAME}
-    <MiniGame onComplete={handleMiniGameComplete} />
-
-    <!-- GAME WON -->
-  {:else if $phase === PHASES.GAME_WON}
-    <div class="win-screen">
-      <div class="win-art glow-amber">
-        <pre>
-╔══════════════════════════════════════╗
-║                                      ║
-║   ★ ★ ★  FÉLICITATIONS ! ★ ★ ★      ║
-║                                      ║
-║   Tu as terminé tous les niveaux !   ║
-║                                      ║
-║   Tu es un vrai champion             ║
-║   de l'orthographe !                 ║
-║                                      ║
-╚══════════════════════════════════════╝
-        </pre>
-      </div>
-
-      <div
-        class="win-name glow"
-        style="font-size: var(--font-lg); margin: 20px 0;"
-      >
-        Bravo, {$playerName} !
-      </div>
-
-      <ProgressMap />
-
-      <button class="start-btn glow" onclick={handleRestart}>
-        [REJOUER ►]
-      </button>
-    </div>
-  {/if}
+    {/if}
 </div>
 
 <style>
-  .game-container {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-  }
+    .game-container {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        background: radial-gradient(
+                circle at 20% 18%,
+                rgba(139, 172, 15, 0.08),
+                transparent 24%
+            ),
+            var(--bg);
+    }
 
-  .start-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 30px;
-    padding: 20px;
-  }
+    .name-screen {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 100%;
+        gap: 18px;
+        padding: 20px;
+    }
 
-  .ascii-art {
-    font-size: var(--font-xs);
-    line-height: 1.2;
-    text-align: left;
-    white-space: pre;
-  }
+    .name-header {
+        align-self: center;
+        width: min(680px, 100%);
+        padding: 18px;
+        font-size: var(--font-sm);
+        line-height: 1.45;
+        text-align: center;
+    }
 
-  .start-btn {
-    font-size: var(--font-md);
-    cursor: pointer;
-    padding: 12px 32px;
-    border: 2px solid var(--green);
-    transition: all 0.2s;
-  }
+    .adventure-hud {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 16px;
+        margin: 14px auto 0;
+        padding: 8px 12px;
+        font-size: var(--font-xs);
+        background: rgba(15, 56, 15, 0.42);
+    }
 
-  .start-btn:hover {
-    background: rgba(0, 255, 0, 0.1);
-    box-shadow: 0 0 20px var(--green-glow);
-    transform: scale(1.05);
-  }
+    .play-screen {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
 
-  .kalkul-link {
-    font-size: var(--font-xs);
-    color: var(--amber);
-    text-decoration: none;
-    border: 1px solid var(--amber);
-    padding: 8px 20px;
-    border-radius: 4px;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    margin-top: 10px;
-  }
-  .kalkul-link:hover {
-    opacity: 1;
-    background: rgba(251, 191, 36, 0.08);
-  }
+    .play-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
 
-  .name-screen {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: 100%;
-  }
+    .play-left {
+        flex: 1;
+        min-width: 0;
+    }
 
-  .name-header {
-    white-space: pre;
-    line-height: 1.4;
-  }
+    .play-right {
+        flex-shrink: 0;
+        padding: 16px;
+    }
 
-  .play-screen {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
+    .result-display {
+        padding: 12px 40px;
+        font-size: var(--font-lg);
+        overflow-wrap: anywhere;
+    }
 
-  .play-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
+    .win-screen {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 22px;
+        padding: 20px;
+        text-align: center;
+    }
 
-  .play-left {
-    flex: 1;
-    min-width: 0;
-  }
+    .win-art {
+        padding: 18px;
+        max-width: 100%;
+        overflow-x: auto;
+    }
 
-  .play-right {
-    flex-shrink: 0;
-    padding: 16px;
-  }
+    .win-art pre {
+        font-size: var(--font-xs);
+        line-height: 1.3;
+    }
 
-  .result-display {
-    text-align: center;
-    min-height: 1.4em;
-  }
+    .win-name {
+        font-size: var(--font-md);
+    }
 
-  .win-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 16px;
-    padding: 20px;
-  }
+    .start-btn {
+        font-size: var(--font-xs);
+        cursor: pointer;
+        padding: 10px 18px;
+        border: 2px solid var(--green);
+    }
 
-  .win-art pre {
-    font-size: var(--font-sm);
-    line-height: 1.3;
-    white-space: pre;
-  }
+    @media (max-width: 680px) {
+        .play-top {
+            flex-direction: column;
+        }
+
+        .play-right {
+            align-self: center;
+        }
+    }
 </style>

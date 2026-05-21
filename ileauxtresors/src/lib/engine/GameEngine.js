@@ -1,17 +1,33 @@
-import { writable, get } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import textContent from '$lib/data/text_content.json';
+import { adventureNodes, CHALLENGE_MODES } from '$lib/data/adventure';
 import { matchPlayerName } from './NameMatcher.js';
 import { soundEngine } from './SoundEngine.js';
+import { clearSave, loadSave, writeSave } from './PersistentStore.js';
 
-// Game phases
+const SAVE_KEY = 'ile_aux_tresors_save';
+
 export const PHASES = {
   START: 'start',
   BOOT: 'boot',
   ASK_NAME: 'askName',
+  OVERWORLD: 'overworld',
   PLAYING: 'playing',
+  CHALLENGE: 'challenge',
+  ADVENTURE_RESULT: 'adventureResult',
   LEVEL_COMPLETE: 'levelComplete',
   MINI_GAME: 'miniGame',
   GAME_WON: 'gameWon'
+};
+
+const DEFAULT_SAVE = {
+  playerName: '',
+  score: 0,
+  currentNodeIndex: 0,
+  unlockedNodeIndex: 0,
+  completedNodeIds: [],
+  rewards: [],
+  levelStars: []
 };
 
 function shuffleArray(array) {
@@ -54,25 +70,32 @@ function initSoundUrls(data) {
       };
     }
   }
-  // Add alphabet
-  processed['ALPHABET'] = {};
+
+  processed.ALPHABET = {};
   for (const letter of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
-    processed['ALPHABET'][letter] = { text: letter, url: 'ALPHABET/' + letter };
+    processed.ALPHABET[letter] = { text: letter, url: 'ALPHABET/' + letter };
   }
   return processed;
+}
+
+function normalizeAnswer(text) {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
 function createGameEngine() {
   const data = initSoundUrls(textContent);
   const levelKeys = getLevelKeys(data);
   const levelsCount = levelKeys.length;
+  const saved = loadSave(SAVE_KEY, {
+    ...DEFAULT_SAVE,
+    levelStars: Array(levelsCount).fill(-1)
+  });
 
-  // Stores
   const phase = writable(PHASES.START);
-  const score = writable(0);
+  const score = writable(saved.score || 0);
   const level = writable(0);
   const retry = writable(0);
-  const playerName = writable('');
+  const playerName = writable(saved.playerName || '');
   const currentQuestion = writable(null);
   const showResult = writable(false);
   const resultText = writable('');
@@ -81,13 +104,63 @@ function createGameEngine() {
   const correctCount = writable(0);
   const streakCount = writable(0);
   const bestStreak = writable(0);
-  const levelStars = writable(Array(levelsCount).fill(-1)); // -1 = locked, 0-3 = stars
-  const lastAnswerCorrect = writable(null); // null, true, false
+  const levelStars = writable(saved.levelStars?.length ? saved.levelStars : Array(levelsCount).fill(-1));
+  const lastAnswerCorrect = writable(null);
   const questionStartTime = writable(0);
-  const mascotMood = writable('idle'); // idle, happy, sad, celebrate
+  const mascotMood = writable('idle');
+  const currentNodeIndex = writable(saved.currentNodeIndex || 0);
+  const selectedNodeIndex = writable(saved.currentNodeIndex || 0);
+  const unlockedNodeIndex = writable(saved.unlockedNodeIndex || 0);
+  const completedNodeIds = writable(saved.completedNodeIds || []);
+  const rewards = writable(saved.rewards || []);
+  const currentChallengeNode = writable(adventureNodes[saved.currentNodeIndex || 0]);
+  const challengeResult = writable(null);
+  const hasSave = writable(Boolean(saved.playerName || saved.completedNodeIds?.length));
 
   let allQuestions = [];
   let playerNameSound = null;
+  let bootCompleted = false;
+
+  function saveProgress() {
+    const saveData = {
+      playerName: get(playerName),
+      score: get(score),
+      currentNodeIndex: get(currentNodeIndex),
+      unlockedNodeIndex: get(unlockedNodeIndex),
+      completedNodeIds: get(completedNodeIds),
+      rewards: get(rewards),
+      levelStars: get(levelStars)
+    };
+    writeSave(SAVE_KEY, saveData);
+    hasSave.set(Boolean(saveData.playerName || saveData.completedNodeIds.length));
+  }
+
+  function resetProgressStores() {
+    score.set(0);
+    level.set(0);
+    retry.set(0);
+    playerName.set('');
+    currentQuestion.set(null);
+    showResult.set(false);
+    resultText.set('');
+    questionsRemaining.set(0);
+    questionsTotal.set(0);
+    correctCount.set(0);
+    streakCount.set(0);
+    bestStreak.set(0);
+    levelStars.set(Array(levelsCount).fill(-1));
+    lastAnswerCorrect.set(null);
+    mascotMood.set('idle');
+    currentNodeIndex.set(0);
+    selectedNodeIndex.set(0);
+    unlockedNodeIndex.set(0);
+    completedNodeIds.set([]);
+    rewards.set([]);
+    currentChallengeNode.set(adventureNodes[0]);
+    challengeResult.set(null);
+    allQuestions = [];
+    playerNameSound = null;
+  }
 
   function getSound(category) {
     return getRandomItem(data, category);
@@ -109,11 +182,10 @@ function createGameEngine() {
     lastAnswerCorrect.set(null);
     mascotMood.set('idle');
 
-    // Unlock this level
     levelStars.update(stars => {
-      const s = [...stars];
-      if (s[lvl] === -1) s[lvl] = 0;
-      return s;
+      const nextStars = [...stars];
+      if (nextStars[lvl] === -1) nextStars[lvl] = 0;
+      return nextStars;
     });
   }
 
@@ -129,13 +201,40 @@ function createGameEngine() {
     return true;
   }
 
-  async function startGame() {
+  async function startNewAdventure() {
+    clearSave(SAVE_KEY);
+    resetProgressStores();
+    hasSave.set(false);
+    bootCompleted = false;
+    soundEngine.stopAll();
+    await soundEngine.warmUp();
     phase.set(PHASES.BOOT);
   }
 
+  async function startGame() {
+    await startNewAdventure();
+  }
+
+  function continueAdventure() {
+    soundEngine.stopAll();
+    const nodeIndex = Math.min(get(currentNodeIndex), get(unlockedNodeIndex));
+    selectedNodeIndex.set(nodeIndex);
+    currentChallengeNode.set(adventureNodes[nodeIndex]);
+    phase.set(PHASES.OVERWORLD);
+  }
+
+  function clearAdventureSave() {
+    clearSave(SAVE_KEY);
+    resetProgressStores();
+    hasSave.set(false);
+    phase.set(PHASES.START);
+  }
+
   async function onBootComplete() {
+    if (bootCompleted || get(phase) !== PHASES.BOOT) return;
+    bootCompleted = true;
+    soundEngine.stopAll();
     phase.set(PHASES.ASK_NAME);
-    setNewGame(0);
     await soundEngine.playSequence([getSound('ASK_PLAYER_NAME')]);
   }
 
@@ -143,29 +242,56 @@ function createGameEngine() {
     const matched = matchPlayerName(inputName);
     playerName.set(matched);
     playerNameSound = { text: matched, url: 'PRENOMS/' + matched.toLowerCase() };
+    saveProgress();
 
-    setQuestion();
-    phase.set(PHASES.PLAYING);
-
-    // Play greeting sequence
-    const sounds = [
+    phase.set(PHASES.OVERWORLD);
+    await soundEngine.playSequence([
       getSound('GREETINGS_1'),
       playerNameSound,
-      getSound('GREETINGS_2'),
-      getSound('INTRO'),
-      get(currentQuestion)
-    ];
-    await soundEngine.playSequence(sounds);
+      getSound('GREETINGS_2')
+    ]);
+  }
+
+  function moveSelection(delta) {
+    const unlocked = get(unlockedNodeIndex);
+    selectedNodeIndex.update(index => {
+      const next = Math.max(0, Math.min(unlocked, index + delta));
+      currentChallengeNode.set(adventureNodes[next]);
+      return next;
+    });
+  }
+
+  function selectMapNode(index) {
+    if (index > get(unlockedNodeIndex)) return;
+    selectedNodeIndex.set(index);
+    currentChallengeNode.set(adventureNodes[index]);
+  }
+
+  async function startSelectedChallenge() {
+    const node = adventureNodes[get(selectedNodeIndex)];
+    if (!node || get(selectedNodeIndex) > get(unlockedNodeIndex)) return;
+    currentNodeIndex.set(get(selectedNodeIndex));
+    currentChallengeNode.set(node);
+    challengeResult.set(null);
+    saveProgress();
+
+    if (node.mode === CHALLENGE_MODES.DICTEE) {
+      const lvl = Math.min(node.level ?? 0, levelsCount - 1);
+      setNewGame(lvl);
+      setQuestion();
+      phase.set(PHASES.CHALLENGE);
+      await soundEngine.playSequence([getSound('INTRO'), get(currentQuestion)]);
+      return;
+    }
+
+    phase.set(PHASES.CHALLENGE);
   }
 
   async function checkAnswer(answer) {
     const q = get(currentQuestion);
     if (!q) return;
 
-    const normalized = q.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-    if (answer === normalized) {
-      // Correct!
+    if (normalizeAnswer(answer) === normalizeAnswer(q.text)) {
       const currentStreak = get(streakCount) + 1;
       streakCount.set(currentStreak);
       bestStreak.update(b => Math.max(b, currentStreak));
@@ -173,14 +299,12 @@ function createGameEngine() {
       lastAnswerCorrect.set(true);
       mascotMood.set('happy');
 
-      // Scoring: base 10 + streak bonus + time bonus
       const elapsed = (Date.now() - get(questionStartTime)) / 1000;
       let points = 10;
-      if (currentStreak >= 3) points += currentStreak * 2; // streak bonus
-      if (elapsed < 10) points += Math.floor((10 - elapsed) * 2); // time bonus
+      if (currentStreak >= 3) points += currentStreak * 2;
+      if (elapsed < 10) points += Math.floor((10 - elapsed) * 2);
       score.update(s => s + points);
 
-      // Check if level is complete
       if (allQuestions.length === 0) {
         await handleLevelComplete();
       } else {
@@ -188,23 +312,20 @@ function createGameEngine() {
         await playNextQuestion();
       }
     } else {
-      // Wrong
       streakCount.set(0);
       lastAnswerCorrect.set(false);
       mascotMood.set('sad');
       retry.update(r => r + 1);
 
-      const currentRetry = get(retry);
-      if (currentRetry >= 3) {
-        // Show correct answer and move on
+      if (get(retry) >= 3) {
         await playCorrectAnswerAndContinue();
       } else {
         await playWrongAnswer();
       }
     }
 
-    // Reset mood after a delay
     setTimeout(() => mascotMood.set('idle'), 2000);
+    saveProgress();
   }
 
   async function handleLevelComplete() {
@@ -212,45 +333,70 @@ function createGameEngine() {
     const total = get(questionsTotal);
     const accuracy = total > 0 ? correct / total : 0;
 
-    // Calculate stars: 3 = >90%, 2 = >70%, 1 = >50%, 0 = <50%
     let stars = 0;
     if (accuracy >= 0.9) stars = 3;
     else if (accuracy >= 0.7) stars = 2;
     else if (accuracy >= 0.5) stars = 1;
 
-    levelStars.update(s => {
-      const arr = [...s];
+    levelStars.update(starsByLevel => {
+      const arr = [...starsByLevel];
       arr[get(level)] = Math.max(arr[get(level)], stars);
-      // Unlock next level
-      const nextLvl = get(level) + 1;
-      if (nextLvl < levelsCount && arr[nextLvl] === -1) {
-        arr[nextLvl] = 0;
-      }
       return arr;
     });
 
-    mascotMood.set('celebrate');
-    phase.set(PHASES.LEVEL_COMPLETE);
-
-    await soundEngine.playSequence([getSound('SCORE_INFOS_2')]);
+    await completeAdventureChallenge({
+      success: stars > 0,
+      points: stars * 20,
+      detail: `Dictee terminee: ${correct}/${total} reponses justes, ${stars} etoile(s).`
+    });
   }
 
-  async function goToMiniGame() {
-    phase.set(PHASES.MINI_GAME);
+  async function completeAdventureChallenge(result) {
+    const node = get(currentChallengeNode);
+    const completed = get(completedNodeIds);
+    const success = Boolean(result?.success);
+    const points = Number(result?.points || 0);
+
+    if (points > 0) score.update(s => s + points);
+
+    if (success && node && !completed.includes(node.id)) {
+      completedNodeIds.set([...completed, node.id]);
+      rewards.update(items => [...items, node.reward]);
+      unlockedNodeIndex.update(index => Math.min(adventureNodes.length - 1, Math.max(index, get(currentNodeIndex) + 1)));
+    }
+
+    challengeResult.set({
+      success,
+      points,
+      detail: result?.detail || (success ? 'Bravo, le chemin continue.' : 'Tu peux recommencer pour gagner le tresor.')
+    });
+    mascotMood.set(success ? 'celebrate' : 'sad');
+    phase.set(PHASES.ADVENTURE_RESULT);
+    saveProgress();
+
+    if (success) {
+      await soundEngine.playSequence([getSound('SCORE_INFOS_2')]);
+    }
   }
 
-  async function goToNextLevel() {
-    const currentLvl = get(level);
-    if (currentLvl < levelsCount - 1) {
-      setNewGame(currentLvl + 1);
-      setQuestion();
-      phase.set(PHASES.PLAYING);
-      const sounds = [getSound('INTRO'), get(currentQuestion)];
-      await soundEngine.playSequence(sounds);
-    } else {
+  function continueFromResult() {
+    const current = get(currentNodeIndex);
+    if (current >= adventureNodes.length - 1 && get(completedNodeIds).includes(adventureNodes[current].id)) {
       phase.set(PHASES.GAME_WON);
       mascotMood.set('celebrate');
+      saveProgress();
+      return;
     }
+
+    const next = Math.min(get(unlockedNodeIndex), current + 1);
+    selectedNodeIndex.set(next);
+    currentChallengeNode.set(adventureNodes[next]);
+    phase.set(PHASES.OVERWORLD);
+  }
+
+  async function restartCurrentChallenge() {
+    selectedNodeIndex.set(get(currentNodeIndex));
+    await startSelectedChallenge();
   }
 
   async function playNextQuestion() {
@@ -260,14 +406,12 @@ function createGameEngine() {
     const intro = getSound('INTRO');
     const q = get(currentQuestion);
 
-    // 20% chance of joke
     if (Math.floor(Math.random() * 5) === 4) {
       sounds.push(beepOk, ok, getSound('JOKES'), intro, q);
     } else {
       sounds.push(beepOk, ok, intro, q);
     }
 
-    // Store sounds on question for repeat
     currentQuestion.update(cq => ({ ...cq, sounds }));
     await soundEngine.playSequence(sounds);
   }
@@ -286,28 +430,21 @@ function createGameEngine() {
     resultText.set('');
 
     const q = get(currentQuestion);
-    const explanation1 = data['ANSWER_EXPLANATION']['answer_1'];
-    const explanation2 = data['ANSWER_EXPLANATION']['answer_2'];
-
-    // Spell out the correct answer
+    const explanation1 = data.ANSWER_EXPLANATION.answer_1;
+    const explanation2 = data.ANSWER_EXPLANATION.answer_2;
     const spellingLetters = q.text.split('').map(letter => ({
       text: letter,
       url: 'ALPHABET/' + letter
     }));
 
-    const revealSounds = [explanation1, q, explanation2, ...spellingLetters];
-
-    // Build result text as letters play
-    const letterCallback = (sound) => {
+    const letterCallback = sound => {
       if (sound.url?.startsWith('ALPHABET/')) {
         resultText.update(t => t + sound.text);
       }
     };
 
-    await soundEngine.playSequence(revealSounds, letterCallback);
-
-    // Wait then move to next question
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await soundEngine.playSequence([explanation1, q, explanation2, ...spellingLetters], letterCallback);
+    await new Promise(resolve => setTimeout(resolve, 1200));
     showResult.set(false);
     resultText.set('');
 
@@ -315,9 +452,7 @@ function createGameEngine() {
       await handleLevelComplete();
     } else {
       setQuestion();
-      const intro = getSound('INTRO');
-      const q2 = get(currentQuestion);
-      await soundEngine.playSequence([intro, q2]);
+      await soundEngine.playSequence([getSound('INTRO'), get(currentQuestion)]);
     }
   }
 
@@ -337,15 +472,18 @@ function createGameEngine() {
     ]);
   }
 
-  function restartGame() {
-    score.set(0);
-    levelStars.set(Array(levelsCount).fill(-1));
-    setNewGame(0);
-    phase.set(PHASES.ASK_NAME);
-    soundEngine.playSequence([getSound('ASK_PLAYER_NAME')]);
+  function goToMiniGame() {
+    phase.set(PHASES.MINI_GAME);
   }
 
-  // Get words for mini-game from current level data
+  function goToNextLevel() {
+    continueFromResult();
+  }
+
+  function restartGame() {
+    clearAdventureSave();
+  }
+
   function getMiniGameWords() {
     const lvl = get(level);
     const key = 'QUESTIONS_LEVEL_' + lvl.toString();
@@ -354,7 +492,6 @@ function createGameEngine() {
   }
 
   return {
-    // Stores
     phase,
     score,
     level,
@@ -372,12 +509,28 @@ function createGameEngine() {
     lastAnswerCorrect,
     mascotMood,
     levelsCount,
-
-    // Actions
+    adventureNodes,
+    currentNodeIndex,
+    selectedNodeIndex,
+    unlockedNodeIndex,
+    completedNodeIds,
+    rewards,
+    currentChallengeNode,
+    challengeResult,
+    hasSave,
     startGame,
+    startNewAdventure,
+    continueAdventure,
+    clearAdventureSave,
     onBootComplete,
     submitPlayerName,
+    moveSelection,
+    selectMapNode,
+    startSelectedChallenge,
     checkAnswer,
+    completeAdventureChallenge,
+    continueFromResult,
+    restartCurrentChallenge,
     repeatQuestion,
     playLetterSound,
     goToMiniGame,
