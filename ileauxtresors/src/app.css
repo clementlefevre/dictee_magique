@@ -1,9 +1,3 @@
-@font-face {
-  font-family: 'Px437';
-  src: url('/fonts/Px437_IBM_VGA8.ttf') format('truetype');
-  font-display: swap;
-}
-
 :root {
   --green: #0f0;
   --green-dim: #0a0;
