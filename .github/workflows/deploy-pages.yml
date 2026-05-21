@@ -3,9 +3,6 @@ name: Deploy ileauxtresors to GitHub Pages
 on:
   push:
     branches: [master]
-    paths:
-      - 'ileauxtresors/**'
-      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
