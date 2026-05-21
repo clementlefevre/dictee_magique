@@ -8,3 +8,6 @@ app/.babelrc
 app/package-lock.json
 app/yarn.lock
 
+keys/
+*.pem
+*.p12
