@@ -126,6 +126,7 @@
     font-size: var(--font-lg);
     flex-shrink: 0;
     user-select: none;
+    color: var(--gb-light);
   }
 
   .input-wrapper {
@@ -155,12 +156,12 @@
   }
 
   .block-cursor {
-    color: var(--green);
+    color: var(--gb-lightest);
   }
 
   .hint {
     font-family: "Px437", monospace;
-    color: var(--green);
+    color: var(--gb-lightest);
   }
 
   .shake {

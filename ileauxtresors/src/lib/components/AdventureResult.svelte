@@ -59,14 +59,15 @@
         height: 56px;
         display: grid;
         place-items: center;
-        border: 2px solid var(--amber);
-        color: var(--amber);
+        border: 2px solid var(--gb-light);
+        color: var(--gb-light);
         font-size: var(--font-lg);
-        animation: bounce 0.7s ease-in-out infinite;
+        animation: bounce 0.7s step-end infinite;
     }
 
     .chest.open {
-        box-shadow: 0 0 18px var(--amber-glow);
+        border-color: var(--gb-lightest);
+        color: var(--gb-lightest);
     }
 
     .result-title {
@@ -93,14 +94,15 @@
     }
 
     .crt-action {
-        border: 1px solid var(--green-dim);
+        border: 1px solid var(--gb-dark);
         padding: 8px 12px;
         cursor: pointer;
     }
 
     .crt-action.selected,
     .crt-action:hover {
-        border-color: var(--green);
-        color: var(--gameboy-light);
+        border-color: var(--gb-light);
+        background: var(--gb-dark);
+        color: var(--gb-lightest);
     }
 </style>

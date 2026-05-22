@@ -173,12 +173,7 @@
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        background: radial-gradient(
-                circle at 20% 18%,
-                rgba(139, 172, 15, 0.08),
-                transparent 24%
-            ),
-            var(--bg);
+        background: var(--gb-darkest);
     }
 
     .name-screen {
@@ -207,7 +202,7 @@
         margin: 14px auto 0;
         padding: 8px 12px;
         font-size: var(--font-xs);
-        background: rgba(15, 56, 15, 0.42);
+        background: var(--gb-dark);
     }
 
     .play-screen {
@@ -267,7 +262,7 @@
         font-size: var(--font-xs);
         cursor: pointer;
         padding: 10px 18px;
-        border: 2px solid var(--green);
+        border: 2px solid var(--gb-light);
     }
 
     @media (max-width: 680px) {

@@ -144,7 +144,7 @@
     .adventure-shell {
         width: min(920px, 100%);
         padding: 18px;
-        background: rgba(139, 172, 15, 0.08);
+        background: var(--gb-darkest);
         display: grid;
         grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
         gap: 18px;
@@ -186,9 +186,8 @@
     }
 
     .hero-scene {
-        border: 2px solid var(--green);
-        background: var(--gameboy-dark);
-        box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+        border: 2px solid var(--gb-light);
+        background: var(--gb-darkest);
         padding: 8px;
     }
 
@@ -211,45 +210,47 @@
         min-height: 28px;
         display: grid;
         place-items: center;
-        border: 1px solid rgba(155, 188, 15, 0.28);
+        border: 1px solid var(--gb-dark);
         font-size: var(--font-xs);
-        color: var(--gameboy-light);
-        background: rgba(139, 172, 15, 0.1);
+        color: var(--gb-light);
+        background: var(--gb-darkest);
     }
 
     .grass {
-        background: rgba(139, 172, 15, 0.14);
+        background: var(--gb-darkest);
     }
     .tree {
-        background: rgba(15, 56, 15, 0.95);
+        background: var(--gb-dark);
+        color: var(--gb-darkest);
     }
     .water {
-        background: rgba(48, 98, 48, 0.82);
+        background: var(--gb-dark);
     }
     .road {
-        background: rgba(155, 188, 15, 0.18);
-        color: var(--amber);
+        background: var(--gb-darkest);
+        color: var(--gb-light);
     }
     .path {
-        background: rgba(139, 172, 15, 0.24);
+        background: var(--gb-darkest);
+        color: var(--gb-light);
     }
     .house,
     .castle {
-        color: var(--amber);
-        border-color: var(--amber);
+        color: var(--gb-light);
+        border-color: var(--gb-light);
     }
     .hero {
-        color: var(--bg);
-        background: var(--amber);
-        animation: bounce 1s ease-in-out infinite;
+        color: var(--gb-darkest);
+        background: var(--gb-lightest);
+        animation: bounce 1s step-end infinite;
     }
     .car,
     .smoke {
-        color: var(--red);
+        color: var(--gb-dark);
     }
     .animal,
     .chest {
-        color: var(--amber);
+        color: var(--gb-light);
     }
 
     .menu {
@@ -275,9 +276,9 @@
 
     .menu-row.selected,
     .menu-row:hover {
-        border-color: var(--green);
-        background: rgba(15, 56, 15, 0.45);
-        color: var(--gameboy-light);
+        border-color: var(--gb-light);
+        background: var(--gb-dark);
+        color: var(--gb-lightest);
     }
 
     @media (max-width: 760px) {

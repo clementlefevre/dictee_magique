@@ -1,17 +1,17 @@
 <script>
-  import { gameEngine } from '$lib/engine/GameEngine.js';
+  import { gameEngine } from "$lib/engine/GameEngine.js";
 
   const { mascotMood } = gameEngine;
 
   const messages = {
-    idle: ['...', '♪♫♪', 'zzZ', '( ◠‿◠ )'],
-    happy: ['Bravo !', 'Super !', 'Génial !', 'Parfait !', 'Excellent !'],
-    sad: ['Essaie encore !', 'Presque !', 'Courage !', 'Tu peux le faire !'],
-    celebrate: ['VICTOIRE !', 'CHAMPION !', 'INCROYABLE !']
+    idle: ["...", "♪♫♪", "zzZ", "( ◠‿◠ )"],
+    happy: ["Bravo !", "Super !", "Génial !", "Parfait !", "Excellent !"],
+    sad: ["Essaie encore !", "Presque !", "Courage !", "Tu peux le faire !"],
+    celebrate: ["VICTOIRE !", "CHAMPION !", "INCROYABLE !"],
   };
 
-  let currentMessage = $state('...');
-  let prevMood = $state('idle');
+  let currentMessage = $state("...");
+  let prevMood = $state("idle");
 
   $effect(() => {
     const mood = $mascotMood;
@@ -25,27 +25,28 @@
 
 <div class="mascot-container">
   <!-- Speech bubble -->
-  <div class="speech-bubble glow" class:bubble-bounce={$mascotMood === 'happy'}>
+  <div class="speech-bubble glow" class:bubble-bounce={$mascotMood === "happy"}>
     <span>{currentMessage}</span>
     <div class="bubble-tail"></div>
   </div>
 
   <!-- Pixel-art retro computer mascot (CSS-only) -->
-  <div class="mascot"
-    class:bob={$mascotMood === 'idle'}
-    class:bounce-happy={$mascotMood === 'happy'}
-    class:shake-sad={$mascotMood === 'sad'}
-    class:celebrate={$mascotMood === 'celebrate'}
+  <div
+    class="mascot"
+    class:bob={$mascotMood === "idle"}
+    class:bounce-happy={$mascotMood === "happy"}
+    class:shake-sad={$mascotMood === "sad"}
+    class:celebrate={$mascotMood === "celebrate"}
   >
     <div class="computer">
       <!-- Monitor -->
       <div class="monitor">
         <div class="screen">
           <div class="face">
-            {#if $mascotMood === 'happy' || $mascotMood === 'celebrate'}
+            {#if $mascotMood === "happy" || $mascotMood === "celebrate"}
               <span class="eyes">◕ ◕</span>
               <span class="mouth">‿‿‿</span>
-            {:else if $mascotMood === 'sad'}
+            {:else if $mascotMood === "sad"}
               <span class="eyes">◕ ◕</span>
               <span class="mouth sad-mouth">╥</span>
             {:else}
@@ -59,7 +60,7 @@
       <!-- Body / keyboard -->
       <div class="keyboard">
         <div class="key-row">
-          {#each '░░░░░░░' as _}
+          {#each "░░░░░░░" as _}
             <span class="key">░</span>
           {/each}
         </div>
@@ -79,8 +80,8 @@
 
   .speech-bubble {
     position: relative;
-    background: rgba(0, 255, 0, 0.08);
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    background: var(--gb-dark);
+    border: 1px solid var(--gb-light);
     padding: 6px 14px;
     font-size: var(--font-xs);
     text-align: center;
@@ -89,6 +90,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--gb-lightest);
   }
 
   .bubble-tail {
@@ -100,7 +102,7 @@
     height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-top: 8px solid rgba(0, 255, 0, 0.3);
+    border-top: 8px solid var(--gb-light);
   }
 
   .bubble-bounce {
@@ -126,12 +128,11 @@
   .screen {
     width: 80px;
     height: 60px;
-    border: 3px solid var(--green);
-    background: rgba(0, 255, 0, 0.05);
+    border: 3px solid var(--gb-light);
+    background: var(--gb-darkest);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 8px rgba(0, 255, 0, 0.2), inset 0 0 12px rgba(0, 255, 0, 0.05);
   }
 
   .face {
@@ -144,23 +145,22 @@
   .eyes {
     font-size: 14px;
     letter-spacing: 6px;
-    color: var(--green);
+    color: var(--gb-lightest);
   }
 
   .mouth {
     font-size: 12px;
-    color: var(--green);
+    color: var(--gb-lightest);
   }
 
   .sad-mouth {
-    color: var(--amber);
+    color: var(--gb-light);
   }
 
   .monitor-base {
     width: 30px;
     height: 8px;
-    background: var(--green);
-    opacity: 0.6;
+    background: var(--gb-light);
   }
 
   .keyboard {
@@ -174,8 +174,8 @@
 
   .key {
     font-size: 10px;
-    color: var(--green);
-    opacity: 0.5;
+    color: var(--gb-dark);
+    opacity: 0.8;
   }
 
   /* Animations */
@@ -196,33 +196,71 @@
   }
 
   @keyframes bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
   }
 
   @keyframes bounce-happy {
-    0% { transform: scale(1) translateY(0); }
-    30% { transform: scale(1.1) translateY(-8px); }
-    60% { transform: scale(0.95) translateY(0); }
-    100% { transform: scale(1) translateY(0); }
+    0% {
+      transform: scale(1) translateY(0);
+    }
+    30% {
+      transform: scale(1.1) translateY(-8px);
+    }
+    60% {
+      transform: scale(0.95) translateY(0);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+    }
   }
 
   @keyframes shake-sad {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-3px); }
-    40%, 80% { transform: translateX(3px); }
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-3px);
+    }
+    40%,
+    80% {
+      transform: translateX(3px);
+    }
   }
 
   @keyframes celebrate {
-    0% { transform: scale(1) rotate(0deg); }
-    25% { transform: scale(1.2) rotate(-5deg); }
-    50% { transform: scale(1.2) rotate(5deg); }
-    75% { transform: scale(1.1) rotate(-3deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    25% {
+      transform: scale(1.2) rotate(-5deg);
+    }
+    50% {
+      transform: scale(1.2) rotate(5deg);
+    }
+    75% {
+      transform: scale(1.1) rotate(-3deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
   }
 
   @keyframes bubble-pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>

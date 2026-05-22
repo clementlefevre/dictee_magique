@@ -135,28 +135,29 @@
         gap: 8px;
         align-items: center;
         padding: 8px 10px;
-        border: 1px solid var(--green-dim);
+        border: 1px solid var(--gb-dark);
         text-align: left;
         font-size: var(--font-xs);
         cursor: pointer;
     }
 
     .choice-row.selected {
-        border-color: var(--amber);
-        color: var(--amber);
+        border-color: var(--gb-lightest);
+        color: var(--gb-lightest);
     }
 
     .choice-row.correct {
-        border-color: var(--green);
-        background: rgba(139, 172, 15, 0.16);
+        border-color: var(--gb-light);
+        background: var(--gb-dark);
     }
 
     .choice-row.wrong,
     .explanation.ko {
-        color: var(--red);
+        color: var(--gb-dark);
+        background: var(--gb-darkest);
     }
 
     .explanation.ok {
-        color: var(--gameboy-light);
+        color: var(--gb-lightest);
     }
 </style>

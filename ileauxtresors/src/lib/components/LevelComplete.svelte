@@ -1,25 +1,28 @@
 <script>
-  import { gameEngine } from '$lib/engine/GameEngine.js';
+  import { gameEngine } from "$lib/engine/GameEngine.js";
 
   let { onContinue, onMiniGame } = $props();
 
-  const { score, level, correctCount, questionsTotal, bestStreak, levelStars } = gameEngine;
+  const { score, level, correctCount, questionsTotal, bestStreak, levelStars } =
+    gameEngine;
 
   let accuracy = $derived(
-    $questionsTotal > 0 ? Math.round(($correctCount / $questionsTotal) * 100) : 0
+    $questionsTotal > 0
+      ? Math.round(($correctCount / $questionsTotal) * 100)
+      : 0,
   );
 
   let stars = $derived($levelStars[$level] || 0);
 
   let chestOpen = $state(false);
 
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   onMount(() => {
-    setTimeout(() => chestOpen = true, 500);
+    setTimeout(() => (chestOpen = true), 500);
   });
 
   function starDisplay(n) {
-    return '★'.repeat(n) + '☆'.repeat(3 - n);
+    return "*".repeat(n) + ".".repeat(3 - n);
   }
 </script>
 
@@ -28,7 +31,7 @@
   <div class="chest" class:open={chestOpen}>
     <div class="chest-lid">╔══╗</div>
     <div class="chest-body">
-      ║{chestOpen ? '✦✦' : '  '}║
+      ║{chestOpen ? "**" : "  "}║
     </div>
     <div class="chest-base">╚══╝</div>
   </div>
@@ -52,7 +55,7 @@
     </div>
     <div class="stat-row glow">
       <span class="stat-label">Meilleure série :</span>
-      <span class="stat-value">{$bestStreak} 🔥</span>
+      <span class="stat-value">{$bestStreak} !</span>
     </div>
     <div class="stat-row glow">
       <span class="stat-label">Score total :</span>
@@ -62,13 +65,9 @@
 
   <div class="buttons">
     {#if onMiniGame}
-      <button class="btn glow" onclick={onMiniGame}>
-        [BONUS GAME ►]
-      </button>
+      <button class="btn glow" onclick={onMiniGame}> [BONUS GAME ►] </button>
     {/if}
-    <button class="btn glow" onclick={onContinue}>
-      [NIVEAU SUIVANT ►]
-    </button>
+    <button class="btn glow" onclick={onContinue}> [NIVEAU SUIVANT ►] </button>
   </div>
 </div>
 
@@ -96,23 +95,20 @@
   }
 
   .chest-lid {
-    transition: transform 0.4s ease;
-    color: var(--amber);
-    text-shadow: 0 0 6px var(--amber-glow);
+    transition: transform 0.4s steps(4);
+    color: var(--gb-light);
   }
 
   .chest.open .chest-lid {
-    transform: translateY(-8px) rotateX(-20deg);
+    transform: translateY(-8px);
   }
 
   .chest-body {
-    color: var(--amber);
-    text-shadow: 0 0 6px var(--amber-glow);
+    color: var(--gb-light);
   }
 
   .chest-base {
-    color: var(--amber);
-    text-shadow: 0 0 6px var(--amber-glow);
+    color: var(--gb-light);
   }
 
   .congrats {
@@ -125,8 +121,7 @@
   }
 
   .stars {
-    color: var(--amber);
-    text-shadow: 0 0 8px var(--amber-glow);
+    color: var(--gb-light);
     letter-spacing: 8px;
   }
 
@@ -160,17 +155,22 @@
     font-size: var(--font-sm);
     cursor: pointer;
     padding: 8px 20px;
-    border: 1px solid var(--green);
-    transition: all 0.2s;
+    border: 1px solid var(--gb-dark);
   }
 
   .btn:hover {
-    background: rgba(0, 255, 0, 0.1);
-    box-shadow: 0 0 12px var(--green-glow);
+    background: var(--gb-dark);
+    border-color: var(--gb-light);
   }
 
   @keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 </style>

@@ -261,8 +261,8 @@
         gap: 24px;
         padding: 20px;
         font-family: "Px437", monospace;
-        color: var(--green);
-        background: var(--bg);
+        color: var(--gb-lightest);
+        background: var(--gb-darkest);
     }
 
     /* ── Header ──────────────────────────────────── */
@@ -293,10 +293,7 @@
         flex-direction: column;
         align-items: center;
         gap: 24px;
-        border: 2px solid var(--green);
-        box-shadow:
-            inset 0 0 8px rgba(0, 255, 0, 0.1),
-            0 0 8px rgba(0, 255, 0, 0.1);
+        border: 2px solid var(--gb-light);
         padding: 24px 32px;
         width: 100%;
         max-width: 480px;
@@ -316,7 +313,7 @@
         text-align: center;
         padding-bottom: 8px;
         font-size: var(--font-xs);
-        border-bottom: 1px solid var(--green);
+        border-bottom: 1px solid var(--gb-light);
         letter-spacing: 0.15em;
     }
 
@@ -327,9 +324,9 @@
         text-align: center;
         vertical-align: middle;
         font-size: var(--font-md);
-        border: 1px solid var(--green-dim);
+        border: 1px solid var(--gb-dark);
         padding: 0 4px;
-        background: rgba(0, 255, 0, 0.03);
+        background: var(--gb-darkest);
     }
     .digit-cell.faded {
         border-color: transparent;
@@ -351,8 +348,7 @@
     }
     .divider {
         height: 2px;
-        background: var(--green);
-        box-shadow: 0 0 4px var(--green-glow);
+        background: var(--gb-light);
     }
 
     /* ── Retenue row ─────────────────────────────── */
@@ -379,13 +375,12 @@
         font-size: var(--font-sm);
         font-family: "Px437", monospace;
         text-align: center;
-        border: 1px dashed var(--amber);
-        background: rgba(255, 176, 0, 0.05);
-        color: var(--amber);
+        border: 1px dashed var(--gb-light);
+        background: var(--gb-darkest);
+        color: var(--gb-light);
         outline: none;
-        caret-color: var(--amber);
+        caret-color: var(--gb-light);
         -moz-appearance: textfield;
-        transition: box-shadow 0.15s;
     }
     .ret-input::-webkit-outer-spin-button,
     .ret-input::-webkit-inner-spin-button {
@@ -393,21 +388,19 @@
     }
     .ret-input:focus {
         border-style: solid;
-        box-shadow: 0 0 0 2px var(--amber-glow);
+        border-color: var(--gb-lightest);
     }
     .ret-input.input-ok {
         border-style: solid;
-        border-color: var(--green);
-        color: var(--green);
-        background: rgba(0, 255, 0, 0.05);
-        box-shadow: 0 0 4px var(--green-glow);
+        border-color: var(--gb-lightest);
+        color: var(--gb-lightest);
+        background: var(--gb-dark);
     }
     .ret-input.input-ko {
         border-style: solid;
-        border-color: var(--red);
-        color: var(--red);
-        background: rgba(255, 51, 51, 0.05);
-        box-shadow: 0 0 4px var(--red-glow);
+        border-color: var(--gb-dark);
+        color: var(--gb-light);
+        background: var(--gb-darkest);
     }
     .ret-input:disabled {
         cursor: default;
@@ -426,34 +419,27 @@
         font-size: var(--font-md);
         font-family: "Px437", monospace;
         text-align: center;
-        border: 2px solid var(--green-dim);
-        background: rgba(0, 255, 0, 0.04);
-        color: var(--green);
+        border: 2px solid var(--gb-dark);
+        background: var(--gb-darkest);
+        color: var(--gb-lightest);
         outline: none;
-        caret-color: var(--green);
+        caret-color: var(--gb-lightest);
         -moz-appearance: textfield;
-        transition:
-            border-color 0.15s,
-            box-shadow 0.15s;
     }
     .digit-input::-webkit-outer-spin-button,
     .digit-input::-webkit-inner-spin-button {
         -webkit-appearance: none;
     }
     .digit-input:focus {
-        border-color: var(--green);
-        box-shadow: 0 0 0 3px var(--green-glow);
+        border-color: var(--gb-lightest);
     }
     .digit-input.input-ok {
-        border-color: var(--green);
-        color: var(--green);
-        box-shadow: 0 0 6px var(--green-glow);
+        border-color: var(--gb-lightest);
+        background: var(--gb-dark);
     }
     .digit-input.input-ko {
-        border-color: var(--red);
-        color: var(--red);
-        background: rgba(255, 51, 51, 0.05);
-        box-shadow: 0 0 6px var(--red-glow);
+        border-color: var(--gb-dark);
+        color: var(--gb-light);
     }
     .digit-input:disabled {
         cursor: default;
@@ -480,20 +466,15 @@
         font-size: var(--font-sm);
         cursor: pointer;
         padding: 10px 28px;
-        border: 2px solid var(--green);
-        color: var(--green);
-        background: transparent;
+        border: 2px solid var(--gb-light);
+        color: var(--gb-lightest);
+        background: var(--gb-darkest);
         font-family: "Px437", monospace;
         letter-spacing: 0.05em;
-        transition:
-            background 0.15s,
-            box-shadow 0.15s;
-        text-shadow: 0 0 4px var(--green-glow);
-        box-shadow: 0 0 6px rgba(0, 255, 0, 0.15);
     }
     .crt-btn:hover {
-        background: rgba(0, 255, 0, 0.08);
-        box-shadow: 0 0 14px var(--green-glow);
+        background: var(--gb-dark);
+        border-color: var(--gb-lightest);
     }
     .crt-btn:active {
         opacity: 0.7;

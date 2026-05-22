@@ -1,12 +1,12 @@
 <script>
-  import { gameEngine } from '$lib/engine/GameEngine.js';
+  import { gameEngine } from "$lib/engine/GameEngine.js";
 
   const { levelStars, level, levelsCount } = gameEngine;
 
   function starDisplay(count) {
-    if (count < 0) return '🔒';
-    if (count === 0) return '☆☆☆';
-    return '★'.repeat(count) + '☆'.repeat(3 - count);
+    if (count < 0) return "[?]";
+    if (count === 0) return "...";
+    return "*".repeat(count) + ".".repeat(3 - count);
   }
 </script>
 
@@ -24,7 +24,7 @@
         class:completed={stars > 0}
       >
         <div class="level-number" class:glow={!isLocked}>
-          {isLocked ? '?' : i}
+          {isLocked ? "?" : i}
         </div>
         <div class="level-stars">
           {starDisplay(stars)}
@@ -68,7 +68,7 @@
   .level-number {
     width: 36px;
     height: 36px;
-    border: 2px solid rgba(0, 255, 0, 0.3);
+    border: 2px solid var(--gb-dark);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,19 +76,18 @@
   }
 
   .level-node.current .level-number {
-    border-color: var(--green);
-    box-shadow: 0 0 12px var(--green-glow);
-    animation: pulse 1.5s ease-in-out infinite;
+    border-color: var(--gb-lightest);
+    animation: pulse 1s step-end infinite;
   }
 
   .level-node.locked .level-number {
     opacity: 0.3;
-    color: #555;
+    color: var(--gb-dark);
   }
 
   .level-node.completed .level-number {
-    border-color: var(--amber);
-    color: var(--amber);
+    border-color: var(--gb-light);
+    color: var(--gb-light);
   }
 
   .level-stars {
@@ -106,16 +105,21 @@
     right: -38px;
     top: 16px;
     font-size: 10px;
-    color: rgba(0, 255, 0, 0.2);
+    color: var(--gb-dark);
     white-space: nowrap;
   }
 
   .connector.active {
-    color: rgba(0, 255, 0, 0.5);
+    color: var(--gb-light);
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green-glow); }
-    50% { opacity: 0.8; box-shadow: 0 0 16px var(--green-glow); }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
   }
 </style>

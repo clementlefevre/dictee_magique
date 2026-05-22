@@ -1,8 +1,10 @@
 <script lang="ts">
+    import { onMount, onDestroy } from "svelte";
     import { CHALLENGE_MODES } from "$lib/data/adventure";
     import {
         WORLD_TILES,
         WORLD_WIDTH,
+        WORLD_HEIGHT,
         createPlayerAtNode,
         directionDelta,
         movePlayer,
@@ -38,6 +40,7 @@
         [CHALLENGE_MODES.QCM]: "QUIZ",
     };
 
+    // ── Player state ─────────────────────────────────────────────────────────
     let player = $state<PlayerState>({
         x: 4,
         y: 4,
@@ -56,46 +59,281 @@
         return index <= unlockedIndex;
     }
 
-    // Sprite sheet: Tiny 16 Basic by Lanea Zimmerman (Sharm) — CC-BY 3.0
-    // https://opengameart.org/content/tiny-16-basic
-    const SPRITE_SCALE = 3;
-    const TILE_PX = 16 * SPRITE_SCALE; // 48px per displayed tile
+    // ── Canvas / rendering ────────────────────────────────────────────────────
+    // DMG Game Boy specs: 160x144 internal resolution, 4-color palette only.
+    // Rendering uses Mode-7 style affine floor projection (no external engines).
 
-    const tilePos: Record<TileCode, [number, number]> = {
-        ".": [3, 1], // bright grass
-        "~": [5, 1], // water
-        T: [4, 1], // dark forest
-        "=": [1, 0], // stone path
-        ":": [0, 1], // dirt path
-        M: [2, 6], // dark stone / castle
-        H: [4, 0], // red brick / house
-        S: [2, 1], // sand / station ground
+    const W = 160;
+    const H = 144;
+
+    // DMG Game Boy 4-color palette (RGBA tuples for ImageData)
+    const PD = [0x0f, 0x38, 0x0f] as const; // darkest  #0f380f
+    const PM = [0x30, 0x62, 0x30] as const; // dark     #306230
+    const PL = [0x8b, 0xac, 0x0f] as const; // light    #8bac0f
+    const PH = [0x9b, 0xbc, 0x0f] as const; // lightest #9bbc0f
+
+    // Horizon y-coordinate (separates sky from floor)
+    const HORIZON = 48;
+
+    // Camera: fixed south of the map, follows player X
+    const CAM_Y   = WORLD_HEIGHT + 2.5; // 9.5 — always south of the 1..7 grid
+    const CAM_H   = 1.8;                // camera height above ground plane
+    const FOV     = 0.85;               // half-width field of view factor
+
+    // Tile visual colors: [close palette, far palette]
+    const TILE_PAL: Record<TileCode, [typeof PD, typeof PD]> = {
+        ".": [PH, PL],   // grass:       lightest / light
+        "~": [PM, PD],   // water:       dark / darkest
+        "T": [PD, PD],   // forest:      solid darkest
+        "=": [PL, PM],   // stone road:  light / dark
+        ":": [PH, PL],   // dirt path:   lightest / light
+        "M": [PM, PD],   // castle:      dark / darkest
+        "H": [PL, PM],   // house:       light / dark
+        "S": [PH, PH],   // station:     solid lightest (stands out)
     };
 
-    function tileBg(tile: TileCode): string {
-        const [c, r] = tilePos[tile] ?? [0, 0];
-        const bw = 128 * SPRITE_SCALE;
-        const bh = 240 * SPRITE_SCALE;
-        return `background-image:url('/sprites/basictiles.png');background-size:${bw}px ${bh}px;background-position:${-(c * TILE_PX)}px ${-(r * TILE_PX)}px;`;
+    let canvas: HTMLCanvasElement;
+    let ctx: CanvasRenderingContext2D;
+    let imgData: ImageData;
+    let buf: Uint8ClampedArray;
+    let rafId: number;
+    let frame = 0;
+
+    // Write one pixel into the ImageData buffer (strict palette only)
+    function px(x: number, y: number, c: readonly number[]) {
+        const i = (y * W + x) << 2;
+        buf[i]     = c[0];
+        buf[i + 1] = c[1];
+        buf[i + 2] = c[2];
+        buf[i + 3] = 0xff;
     }
 
-    const heroDirRow: Record<Direction, number> = {
-        down: 0,
-        left: 1,
-        right: 2,
-        up: 3,
-    };
-
-    function heroBg(facing: Direction): string {
-        const r = heroDirRow[facing];
-        const bw = 192 * SPRITE_SCALE;
-        const bh = 128 * SPRITE_SCALE;
-        // col 1 = standing frame for each direction
-        return `background-image:url('/sprites/characters.png');background-size:${bw}px ${bh}px;background-position:-${TILE_PX}px -${r * TILE_PX}px;`;
+    function getTile(tx: number, ty: number): TileCode {
+        if (tx < 1 || ty < 1 || tx > WORLD_WIDTH || ty > WORLD_HEIGHT)
+            return "~";
+        return (WORLD_TILES[(ty - 1) * WORLD_WIDTH + (tx - 1)] ?? "~") as TileCode;
     }
 
+    // ── Mode-7 affine floor projection ───────────────────────────────────────
+    // For each scanline y > HORIZON, compute the world row distance and sweep
+    // across all 160 columns, sampling the tile grid.  Depth is encoded as a
+    // 4-level checkerboard dither so no intermediate colors are introduced.
+    function renderFloor(camX: number) {
+        const floorRows = H - HORIZON; // pixel rows below horizon
+
+        for (let sy = HORIZON; sy < H; sy++) {
+            const dy    = sy - HORIZON;                              // pixels below horizon
+            // World distance: close rows → small dist, far rows → large dist
+            const dist  = (CAM_H * floorRows) / dy;
+            const worldY = CAM_Y - dist;                            // world row (north of camera)
+
+            // World X extent for this scanline
+            const wxLeft = camX - dist * FOV;
+            const stepX  = (2 * dist * FOV) / W;
+
+            // Depth [0=far, 1=close] drives dither threshold
+            const depth = dy / floorRows;
+
+            for (let sx = 0; sx < W; sx++) {
+                const wx   = wxLeft + sx * stepX;
+                const tile = getTile(Math.floor(wx), Math.floor(worldY));
+                const [cClose, cFar] = TILE_PAL[tile];
+
+                // 4-shade depth dithering via checkerboard — no anti-aliasing
+                let c: readonly number[];
+                const odd = (sx + sy) & 1;
+                if      (depth < 0.18) c = PD;
+                else if (depth < 0.40) c = odd ? PD : PM;
+                else if (depth < 0.65) c = odd ? PM : cFar;
+                else                   c = odd ? cFar : cClose;
+
+                px(sx, sy, c);
+            }
+        }
+    }
+
+    // ── Sky + horizon ─────────────────────────────────────────────────────────
+    function renderSky() {
+        for (let sy = 0; sy < HORIZON; sy++) {
+            // Gradient: darkest at top, bleeds into dark near horizon
+            const c = sy < HORIZON - 5 ? PD : PM;
+            for (let sx = 0; sx < W; sx++) px(sx, sy, c);
+        }
+        // Bright horizon line
+        for (let sx = 0; sx < W; sx++) px(sx, HORIZON - 1, PL);
+    }
+
+    // ── Project world position onto screen ───────────────────────────────────
+    function project(
+        wx: number,
+        wy: number,
+        camX: number,
+    ): [number, number] | null {
+        const dist = CAM_Y - wy;
+        if (dist <= 0.02) return null;
+        const sy = HORIZON + (CAM_H * (H - HORIZON)) / dist;
+        const sx = W / 2 + ((wx - camX) / (dist * FOV)) * (W / 2);
+        if (sx < 0 || sx >= W || sy < HORIZON || sy >= H) return null;
+        return [Math.round(sx), Math.round(sy)];
+    }
+
+    // ── Draw a sprite at (cx, cy) from an 8-bit-per-row bitmask array ─────────
+    // cx/cy is the bottom-centre anchor point of the sprite.
+    function drawSprite(
+        cx: number,
+        cy: number,
+        rows: readonly number[],
+        color: readonly number[],
+    ) {
+        const h = rows.length;
+        for (let row = 0; row < h; row++) {
+            const bits = rows[row];
+            for (let col = 0; col < 8; col++) {
+                if (!((bits >> (7 - col)) & 1)) continue;
+                const sx = cx - 4 + col;
+                const sy = cy - h + 1 + row;
+                if (sx >= 0 && sx < W && sy >= HORIZON && sy < H)
+                    px(sx, sy, color);
+            }
+        }
+    }
+
+    // 8-column sprites (bitmask per row, MSB = leftmost pixel)
+    // Player: simple humanoid silhouette
+    const SPR_PLAYER = [
+        0b00111100, // head
+        0b01111110,
+        0b01011010, // face
+        0b00111100,
+        0b01111110, // body
+        0b00100100, // legs
+        0b01000010,
+    ] as const;
+
+    // Station marker: bold "!" post
+    const SPR_STATION = [
+        0b00111000,
+        0b00111000,
+        0b00111000,
+        0b00000000,
+        0b00111000,
+    ] as const;
+
+    // Locked station: "?"
+    const SPR_LOCKED = [
+        0b01110000,
+        0b10001000,
+        0b00010000,
+        0b00100000,
+        0b00100000,
+    ] as const;
+
+    // ── Render stations ───────────────────────────────────────────────────────
+    function renderStations(camX: number) {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            const unlocked = isUnlocked(i);
+            const isSel = i === selectedIndex;
+            const pos = project(node.x + 0.5, node.y + 0.5, camX);
+            if (!pos) continue;
+            const [sx, sy] = pos;
+
+            if (!unlocked) {
+                drawSprite(sx, sy, SPR_LOCKED, PM);
+                continue;
+            }
+            // Blink selected station at ~2 Hz
+            if (isSel && frame % 24 >= 14) continue;
+            drawSprite(sx, sy, SPR_STATION, isSel ? PH : PL);
+        }
+    }
+
+    // ── Render player sprite ──────────────────────────────────────────────────
+    function renderPlayer(camX: number) {
+        const pos = project(player.x + 0.5, player.y + 0.5, camX);
+        if (!pos) return;
+        const [sx, sy] = pos;
+        drawSprite(sx, sy, SPR_PLAYER, PH);
+        // Drop shadow (1 row below, 3 pixels wide)
+        for (let dx = -1; dx <= 1; dx++) {
+            const bx = sx + dx;
+            if (bx >= 0 && bx < W && sy + 1 < H) px(bx, sy + 1, PD);
+        }
+    }
+
+    // ── Main render ───────────────────────────────────────────────────────────
+    function renderFrame() {
+        // Camera X follows player, clamped to keep map edges in view
+        const camX = Math.max(3, Math.min(WORLD_WIDTH - 2, player.x + 0.5));
+
+        // 1. Sky (writes rows 0..HORIZON-1)
+        renderSky();
+        // 2. Mode-7 floor (writes rows HORIZON..H-1)
+        renderFloor(camX);
+        // 3. Stations on floor
+        renderStations(camX);
+        // 4. Player sprite on floor
+        renderPlayer(camX);
+
+        // Commit pixel buffer to canvas
+        ctx.putImageData(imgData, 0, 0);
+
+        // 5. HUD text overlay — drawn via ctx so Px437 CSS font is used at full clarity.
+        //    The canvas is scaled up 3× by CSS; text drawn here is at 160×144 scale.
+        renderHUD();
+
+        frame++;
+    }
+
+    function renderHUD() {
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+
+        // Title bar (overdraws top of sky)
+        ctx.fillStyle = "#0f380f";
+        ctx.fillRect(0, 0, W, 11);
+        ctx.fillStyle = "#8bac0f";
+        ctx.fillRect(0, 10, W, 1);
+        ctx.font = "bold 7px Px437, monospace";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = "#9bbc0f";
+        ctx.fillText("ILE AUX TRESORS", 2, 2);
+
+        // Bottom info bar
+        const barY = H - 20;
+        ctx.fillStyle = "#0f380f";
+        ctx.fillRect(0, barY, W, 20);
+        ctx.fillStyle = "#306230";
+        ctx.fillRect(0, barY, W, 1);
+
+        if (selected) {
+            ctx.fillStyle = "#9bbc0f";
+            ctx.fillText(selected.title.toUpperCase().substring(0, 20), 2, barY + 2);
+            ctx.fillStyle = "#8bac0f";
+            ctx.fillText(modeLabels[selected.mode] ?? "", 2, barY + 11);
+        }
+
+        // ENTER prompt blinks when on a station
+        if (selectedStation >= 0 && frame % 40 < 26) {
+            ctx.fillStyle = "#9bbc0f";
+            ctx.fillText("[ENTER]", W - 50, barY + 6);
+        }
+
+        // Player world coords (top-right corner, dim)
+        ctx.fillStyle = "#306230";
+        ctx.fillText(`${player.x},${player.y}`, W - 20, 2);
+
+        ctx.restore();
+    }
+
+    function loop() {
+        renderFrame();
+        rafId = requestAnimationFrame(loop);
+    }
+
+    // ── Input handling ────────────────────────────────────────────────────────
     function markWalkFinished() {
-        if (walkTimer !== null) window.clearTimeout(walkTimer);
+        if (walkTimer !== null) clearTimeout(walkTimer);
         walkTimer = window.setTimeout(() => {
             player = { ...player, walking: false };
             walkTimer = null;
@@ -104,73 +342,31 @@
 
     function moveHero(direction: Direction) {
         const { dx, dy } = directionDelta(direction);
-        const result = movePlayer(
-            player,
-            nodes,
-            unlockedIndex,
-            dx,
-            dy,
-            direction,
-        );
+        const result = movePlayer(player, nodes, unlockedIndex, dx, dy, direction);
         player = result.player;
         markWalkFinished();
-
-        if (result.stationIndex >= 0) {
-            onSelect?.(result.stationIndex);
-        }
-    }
-
-    function jumpToStation(index: number) {
-        const node = nodes[index];
-        if (!node || !isUnlocked(index)) return;
-
-        player = {
-            x: node.x,
-            y: node.y,
-            facing: "down",
-            walking: false,
-        };
-        onSelect?.(index);
+        if (result.stationIndex >= 0) onSelect?.(result.stationIndex);
     }
 
     function enterStation() {
-        const stationIndex = stationAt(
-            nodes,
-            unlockedIndex,
-            player.x,
-            player.y,
-        );
-        if (stationIndex < 0) return;
-        onSelect?.(stationIndex);
+        const idx = stationAt(nodes, unlockedIndex, player.x, player.y);
+        if (idx < 0) return;
+        onSelect?.(idx);
         onEnter?.();
-    }
-
-    function clickStation(index: number) {
-        const node = nodes[index];
-        if (!node || !isUnlocked(index)) return;
-        if (player.x === node.x && player.y === node.y) {
-            onSelect?.(index);
-            onEnter?.();
-        } else {
-            player = { x: node.x, y: node.y, facing: "down", walking: false };
-            onSelect?.(index);
-        }
     }
 
     function handleKeydown(event: KeyboardEvent) {
         if ((event.target as HTMLElement)?.tagName === "INPUT") return;
-        if (event.key === "ArrowUp") {
+        const dirs: Record<string, Direction> = {
+            ArrowUp: "up",
+            ArrowDown: "down",
+            ArrowLeft: "left",
+            ArrowRight: "right",
+        };
+        const dir = dirs[event.key];
+        if (dir) {
             event.preventDefault();
-            moveHero("up");
-        } else if (event.key === "ArrowDown") {
-            event.preventDefault();
-            moveHero("down");
-        } else if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            moveHero("left");
-        } else if (event.key === "ArrowRight") {
-            event.preventDefault();
-            moveHero("right");
+            moveHero(dir);
         } else if (event.key === "Enter") {
             event.preventDefault();
             enterStation();
@@ -183,77 +379,50 @@
             initialized = true;
         }
     });
+
+    onMount(() => {
+        ctx = canvas.getContext("2d")!;
+        imgData = ctx.createImageData(W, H);
+        buf = imgData.data;
+        loop();
+    });
+
+    onDestroy(() => {
+        if (rafId) cancelAnimationFrame(rafId);
+        if (walkTimer !== null) clearTimeout(walkTimer);
+    });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="overworld">
-    <div class="map-frame pixel-border">
-        <div class="map-title glow-amber">ILE AUX TRESORS - AVENTURE 2D</div>
-
-        <div class="world-grid" style="--world-width: {WORLD_WIDTH};">
-            {#each WORLD_TILES as tile, index}
-                <div
-                    class="terrain-cell"
-                    class:station-ground={tile === "S"}
-                    style="grid-column: {(index % WORLD_WIDTH) +
-                        1}; grid-row: {Math.floor(index / WORLD_WIDTH) +
-                        1}; {tileBg(tile)}"
-                ></div>
-            {/each}
-
-            {#each nodes as node, index (node.id)}
-                <button
-                    class="station-node glow"
-                    class:selected={selectedIndex === index}
-                    class:current={currentIndex === index}
-                    class:locked={!isUnlocked(index)}
-                    class:active-station={node.x === player.x &&
-                        node.y === player.y}
-                    style="grid-column: {node.x}; grid-row: {node.y};"
-                    disabled={!isUnlocked(index)}
-                    onclick={() => clickStation(index)}
-                    aria-label={node.title}
-                >
-                    <span class="station-sign">!</span>
-                    <span class="station-icon"
-                        >{isUnlocked(index) ? node.icon : "?"}</span
-                    >
-                </button>
-            {/each}
-
-            <div
-                class="hero-token"
-                class:walking={player.walking}
-                style="grid-column: {player.x}; grid-row: {player.y}; {heroBg(
-                    player.facing,
-                )}"
-                aria-label="Aventurier"
-            ></div>
-        </div>
+    <div class="screen-frame pixel-border">
+        <canvas
+            bind:this={canvas}
+            width={160}
+            height={144}
+            class="gb-screen"
+        ></canvas>
     </div>
 
     {#if selected}
         <aside class="node-panel pixel-border">
-            <div class="mini-inventory glow">
-                PV [###] | POS [{player.x},{player.y}] | STATION [{selectedStation >=
-                0
-                    ? "OK"
-                    : "--"}]
+            <div class="mini-status glow">
+                POS [{player.x},{player.y}]{selectedStation >= 0
+                    ? " | [!] BORNE"
+                    : ""}
             </div>
             <div class="node-mode glow-amber">{modeLabels[selected.mode]}</div>
             <h1 class="node-title glow">{selected.title}</h1>
             <p class="node-theme">{selected.theme}</p>
             <p class="node-reward glow">Tresor: {selected.reward}</p>
-            <p class="node-keys glow">
-                FLECHES / clic = se deplacer | ENTREE = entrer
-            </p>
+            <p class="node-keys glow">FLECHES = bouger | ENTREE = entrer</p>
             {#if selectedStation >= 0}
                 <button
                     class="enter-btn glow pixel-border"
                     onclick={enterStation}
                 >
-                    [ ENTRER → ]
+                    [ ENTRER ]
                 </button>
             {:else}
                 <p class="walk-hint glow-amber">
@@ -268,140 +437,26 @@
     .overworld {
         min-height: 100%;
         display: grid;
-        grid-template-columns: minmax(420px, 1.25fr) minmax(260px, 0.75fr);
+        grid-template-columns: auto minmax(220px, 0.55fr);
         gap: 18px;
         align-items: center;
+        justify-content: center;
         padding: clamp(16px, 3vw, 36px);
     }
 
-    .map-frame {
-        padding: 18px;
-        background: linear-gradient(
-            180deg,
-            rgba(139, 172, 15, 0.08),
-            rgba(48, 98, 48, 0.08)
-        );
+    .screen-frame {
+        display: inline-block;
+        line-height: 0;
+        flex-shrink: 0;
     }
 
-    .map-title {
-        font-size: var(--font-xs);
-        margin-bottom: 14px;
-        text-align: center;
-    }
-
-    .world-grid {
-        position: relative;
-        display: grid;
-        grid-template-columns: repeat(10, 48px);
-        grid-template-rows: repeat(7, 48px);
-        gap: 0;
-    }
-
-    .terrain-cell {
-        width: 48px;
-        height: 48px;
+    /* Scale the 160x144 canvas up with crisp pixel edges (DMG spec) */
+    .gb-screen {
+        display: block;
+        width: min(480px, 88vw);
+        height: auto;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
-    }
-
-    .terrain-cell.station-ground {
-        box-shadow: inset 0 0 8px rgba(255, 176, 0, 0.45);
-    }
-
-    .station-node {
-        width: 48px;
-        height: 48px;
-        display: grid;
-        place-items: center;
-    }
-
-    .station-node {
-        position: relative;
-        z-index: 2;
-        border: 2px solid var(--green-dim);
-        background: rgba(15, 56, 15, 0.58);
-        cursor: pointer;
-        overflow: visible;
-    }
-
-    .station-node::before {
-        content: "";
-        position: absolute;
-        inset: 6px;
-        border: 1px solid rgba(255, 176, 0, 0.55);
-        background: rgba(255, 176, 0, 0.08);
-    }
-
-    .station-node.selected,
-    .station-node.active-station {
-        border-color: var(--amber);
-        color: var(--amber);
-        box-shadow: 0 0 12px var(--amber-glow);
-    }
-
-    .station-node.locked {
-        opacity: 0.35;
-        cursor: default;
-    }
-
-    .station-sign {
-        position: absolute;
-        top: -16px;
-        right: 5px;
-        width: 20px;
-        height: 20px;
-        display: grid;
-        place-items: center;
-        border: 2px solid var(--amber);
-        background: var(--bg);
-        color: var(--amber);
-        font-size: 14px;
-        z-index: 3;
-    }
-
-    .station-icon {
-        position: relative;
-        z-index: 4;
-        font-size: var(--font-sm);
-    }
-
-    .hero-token {
-        width: 48px;
-        height: 48px;
-        position: relative;
-        z-index: 5;
-        image-rendering: pixelated;
-        image-rendering: crisp-edges;
-        filter: drop-shadow(0 0 4px rgba(255, 176, 0, 0.7));
-        pointer-events: none;
-    }
-
-    .hero-token.walking {
-        animation: hero-bob 0.28s steps(2) infinite;
-    }
-
-    @keyframes hero-bob {
-        0% {
-            transform: translateY(0px);
-        }
-        50% {
-            transform: translateY(-3px);
-        }
-        100% {
-            transform: translateY(0px);
-        }
-    }
-
-    .hero-token.facing-up .hero-hat {
-        background: var(--gameboy-light);
-    }
-
-    .hero-token.facing-left {
-        transform: translateY(-4px) scaleX(-1);
-    }
-
-    .hero-token.facing-right {
-        transform: translateY(-4px) scaleX(1);
     }
 
     .node-panel {
@@ -411,12 +466,12 @@
         align-content: start;
     }
 
+    .mini-status,
     .node-mode,
     .node-reward,
     .node-keys,
     .node-theme,
-    .walk-hint,
-    .mini-inventory {
+    .walk-hint {
         font-size: var(--font-xs);
         line-height: 1.45;
     }
@@ -427,53 +482,34 @@
     }
 
     .node-theme {
-        color: var(--gameboy-light);
-    }
-
-    @keyframes hero-step {
-        0%,
-        100% {
-            margin-top: 0;
-        }
-        50% {
-            margin-top: -5px;
-        }
+        color: var(--gb-lightest);
     }
 
     .enter-btn {
         width: 100%;
         padding: 10px;
         font-size: var(--font-xs);
-        background: rgba(15, 56, 15, 0.55);
+        background: var(--gb-dark);
         cursor: pointer;
-        color: var(--green);
+        color: var(--gb-lightest);
         font-family: inherit;
         text-align: center;
     }
 
     .enter-btn:hover {
-        background: rgba(139, 172, 15, 0.3);
-        border-color: var(--green);
+        background: var(--gb-light);
+        color: var(--gb-darkest);
     }
 
     @media (max-width: 760px) {
         .overworld {
             grid-template-columns: 1fr;
+            justify-items: center;
             align-items: start;
         }
 
-        .world-grid {
-            min-height: 300px;
-            grid-template-columns: repeat(
-                var(--world-width),
-                minmax(24px, 1fr)
-            );
-            grid-auto-rows: minmax(30px, 1fr);
-            gap: 3px;
-        }
-
-        .hero-token {
-            transform: translateY(-4px) scale(0.82);
+        .gb-screen {
+            width: min(320px, 95vw);
         }
     }
 </style>

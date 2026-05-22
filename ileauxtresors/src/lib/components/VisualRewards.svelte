@@ -1,6 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import { gameEngine } from '$lib/engine/GameEngine.js';
+  import { onMount } from "svelte";
+  import { gameEngine } from "$lib/engine/GameEngine.js";
 
   const { lastAnswerCorrect, streakCount } = gameEngine;
 
@@ -8,7 +8,7 @@
   let confettiModule;
 
   onMount(async () => {
-    const mod = await import('canvas-confetti');
+    const mod = await import("canvas-confetti");
     confettiModule = mod.default;
   });
 
@@ -18,8 +18,8 @@
       particleCount: 40,
       spread: 60,
       origin: { y: 0.7 },
-      colors: ['#0f0', '#0a0', '#ffb000', '#fff'],
-      disableForReducedMotion: true
+      colors: ["#9bbc0f", "#8bac0f", "#306230", "#0f380f"],
+      disableForReducedMotion: true,
     });
   }
 
@@ -28,10 +28,10 @@
     confettiModule({
       particleCount: 20,
       spread: 100,
-      shapes: ['star'],
-      colors: ['#ffb000', '#ff0', '#0f0'],
+      shapes: ["star"],
+      colors: ["#9bbc0f", "#8bac0f", "#306230"],
       origin: { y: 0.5 },
-      disableForReducedMotion: true
+      disableForReducedMotion: true,
     });
   }
 
@@ -48,8 +48,8 @@
         particleCount: 30,
         spread: 120,
         origin: { x: Math.random(), y: Math.random() * 0.6 },
-        colors: ['#0f0', '#0a0', '#ffb000', '#ff3333', '#fff'],
-        disableForReducedMotion: true
+        colors: ["#9bbc0f", "#8bac0f", "#306230", "#0f380f"],
+        disableForReducedMotion: true,
       });
     }, 250);
   }
@@ -86,14 +86,18 @@
   .correct-flash {
     position: fixed;
     inset: 0;
-    background: rgba(0, 255, 0, 0.06);
+    background: var(--gb-dark);
     pointer-events: none;
     z-index: 999;
-    animation: fade-flash 0.4s ease-out forwards;
+    animation: fade-flash 0.35s steps(3) forwards;
   }
 
   @keyframes fade-flash {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+      opacity: 0.4;
+    }
+    to {
+      opacity: 0;
+    }
   }
 </style>
