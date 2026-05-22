@@ -76,20 +76,20 @@
     const HORIZON = 48;
 
     // Camera: fixed south of the map, follows player X
-    const CAM_Y   = WORLD_HEIGHT + 2.5; // 9.5 — always south of the 1..7 grid
-    const CAM_H   = 1.8;                // camera height above ground plane
-    const FOV     = 0.85;               // half-width field of view factor
+    const CAM_Y = WORLD_HEIGHT + 2.5; // 9.5 — always south of the 1..7 grid
+    const CAM_H = 1.8; // camera height above ground plane
+    const FOV = 0.85; // half-width field of view factor
 
     // Tile visual colors: [close palette, far palette]
     const TILE_PAL: Record<TileCode, [typeof PD, typeof PD]> = {
-        ".": [PH, PL],   // grass:       lightest / light
-        "~": [PM, PD],   // water:       dark / darkest
-        "T": [PD, PD],   // forest:      solid darkest
-        "=": [PL, PM],   // stone road:  light / dark
-        ":": [PH, PL],   // dirt path:   lightest / light
-        "M": [PM, PD],   // castle:      dark / darkest
-        "H": [PL, PM],   // house:       light / dark
-        "S": [PH, PH],   // station:     solid lightest (stands out)
+        ".": [PH, PL], // grass:       lightest / light
+        "~": [PM, PD], // water:       dark / darkest
+        T: [PD, PD], // forest:      solid darkest
+        "=": [PL, PM], // stone road:  light / dark
+        ":": [PH, PL], // dirt path:   lightest / light
+        M: [PM, PD], // castle:      dark / darkest
+        H: [PL, PM], // house:       light / dark
+        S: [PH, PH], // station:     solid lightest (stands out)
     };
 
     let canvas: HTMLCanvasElement;
@@ -102,7 +102,7 @@
     // Write one pixel into the ImageData buffer (strict palette only)
     function px(x: number, y: number, c: readonly number[]) {
         const i = (y * W + x) << 2;
-        buf[i]     = c[0];
+        buf[i] = c[0];
         buf[i + 1] = c[1];
         buf[i + 2] = c[2];
         buf[i + 3] = 0xff;
@@ -111,7 +111,8 @@
     function getTile(tx: number, ty: number): TileCode {
         if (tx < 1 || ty < 1 || tx > WORLD_WIDTH || ty > WORLD_HEIGHT)
             return "~";
-        return (WORLD_TILES[(ty - 1) * WORLD_WIDTH + (tx - 1)] ?? "~") as TileCode;
+        return (WORLD_TILES[(ty - 1) * WORLD_WIDTH + (tx - 1)] ??
+            "~") as TileCode;
     }
 
     // ── Mode-7 affine floor projection ───────────────────────────────────────
@@ -122,30 +123,30 @@
         const floorRows = H - HORIZON; // pixel rows below horizon
 
         for (let sy = HORIZON; sy < H; sy++) {
-            const dy    = sy - HORIZON;                              // pixels below horizon
+            const dy = sy - HORIZON; // pixels below horizon
             // World distance: close rows → small dist, far rows → large dist
-            const dist  = (CAM_H * floorRows) / dy;
-            const worldY = CAM_Y - dist;                            // world row (north of camera)
+            const dist = (CAM_H * floorRows) / dy;
+            const worldY = CAM_Y - dist; // world row (north of camera)
 
             // World X extent for this scanline
             const wxLeft = camX - dist * FOV;
-            const stepX  = (2 * dist * FOV) / W;
+            const stepX = (2 * dist * FOV) / W;
 
             // Depth [0=far, 1=close] drives dither threshold
             const depth = dy / floorRows;
 
             for (let sx = 0; sx < W; sx++) {
-                const wx   = wxLeft + sx * stepX;
+                const wx = wxLeft + sx * stepX;
                 const tile = getTile(Math.floor(wx), Math.floor(worldY));
                 const [cClose, cFar] = TILE_PAL[tile];
 
                 // 4-shade depth dithering via checkerboard — no anti-aliasing
                 let c: readonly number[];
                 const odd = (sx + sy) & 1;
-                if      (depth < 0.18) c = PD;
-                else if (depth < 0.40) c = odd ? PD : PM;
+                if (depth < 0.18) c = PD;
+                else if (depth < 0.4) c = odd ? PD : PM;
                 else if (depth < 0.65) c = odd ? PM : cFar;
-                else                   c = odd ? cFar : cClose;
+                else c = odd ? cFar : cClose;
 
                 px(sx, sy, c);
             }
@@ -212,20 +213,12 @@
 
     // Station marker: bold "!" post
     const SPR_STATION = [
-        0b00111000,
-        0b00111000,
-        0b00111000,
-        0b00000000,
-        0b00111000,
+        0b00111000, 0b00111000, 0b00111000, 0b00000000, 0b00111000,
     ] as const;
 
     // Locked station: "?"
     const SPR_LOCKED = [
-        0b01110000,
-        0b10001000,
-        0b00010000,
-        0b00100000,
-        0b00100000,
+        0b01110000, 0b10001000, 0b00010000, 0b00100000, 0b00100000,
     ] as const;
 
     // ── Render stations ───────────────────────────────────────────────────────
@@ -308,7 +301,11 @@
 
         if (selected) {
             ctx.fillStyle = "#9bbc0f";
-            ctx.fillText(selected.title.toUpperCase().substring(0, 20), 2, barY + 2);
+            ctx.fillText(
+                selected.title.toUpperCase().substring(0, 20),
+                2,
+                barY + 2,
+            );
             ctx.fillStyle = "#8bac0f";
             ctx.fillText(modeLabels[selected.mode] ?? "", 2, barY + 11);
         }
@@ -342,7 +339,14 @@
 
     function moveHero(direction: Direction) {
         const { dx, dy } = directionDelta(direction);
-        const result = movePlayer(player, nodes, unlockedIndex, dx, dy, direction);
+        const result = movePlayer(
+            player,
+            nodes,
+            unlockedIndex,
+            dx,
+            dy,
+            direction,
+        );
         player = result.player;
         markWalkFinished();
         if (result.stationIndex >= 0) onSelect?.(result.stationIndex);
@@ -373,6 +377,23 @@
         }
     }
 
+    // ── Touch / pointer controls ──────────────────────────────────────────────
+    // startMove fires immediately and auto-repeats while held; stopMove cancels.
+    let touchRepeat: number | null = null;
+
+    function startMove(dir: Direction) {
+        moveHero(dir);
+        if (touchRepeat !== null) clearInterval(touchRepeat);
+        touchRepeat = window.setInterval(() => moveHero(dir), 200);
+    }
+
+    function stopMove() {
+        if (touchRepeat !== null) {
+            clearInterval(touchRepeat);
+            touchRepeat = null;
+        }
+    }
+
     $effect(() => {
         if (!initialized && nodes[selectedIndex]) {
             player = createPlayerAtNode(nodes, selectedIndex);
@@ -390,126 +411,168 @@
     onDestroy(() => {
         if (rafId) cancelAnimationFrame(rafId);
         if (walkTimer !== null) clearTimeout(walkTimer);
+        if (touchRepeat !== null) clearInterval(touchRepeat);
     });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="overworld">
-    <div class="screen-frame pixel-border">
+    <div class="screen-wrap">
         <canvas
             bind:this={canvas}
             width={160}
             height={144}
-            class="gb-screen"
+            class="gb-screen pixel-border"
         ></canvas>
-    </div>
 
-    {#if selected}
-        <aside class="node-panel pixel-border">
-            <div class="mini-status glow">
-                POS [{player.x},{player.y}]{selectedStation >= 0
-                    ? " | [!] BORNE"
-                    : ""}
-            </div>
-            <div class="node-mode glow-amber">{modeLabels[selected.mode]}</div>
-            <h1 class="node-title glow">{selected.title}</h1>
-            <p class="node-theme">{selected.theme}</p>
-            <p class="node-reward glow">Tresor: {selected.reward}</p>
-            <p class="node-keys glow">FLECHES = bouger | ENTREE = entrer</p>
-            {#if selectedStation >= 0}
-                <button
-                    class="enter-btn glow pixel-border"
-                    onclick={enterStation}
-                >
-                    [ ENTRER ]
-                </button>
-            {:else}
-                <p class="walk-hint glow-amber">
-                    Marche sur une borne ! pour lancer une epreuve.
-                </p>
-            {/if}
-        </aside>
-    {/if}
+        <!-- Touch D-pad (bottom-left) -->
+        <div class="dpad" aria-hidden="true">
+            <button
+                class="dpad-btn dpad-up"
+                onpointerdown={() => startMove("up")}
+                onpointerup={stopMove}
+                onpointerleave={stopMove}>▲</button
+            >
+            <button
+                class="dpad-btn dpad-left"
+                onpointerdown={() => startMove("left")}
+                onpointerup={stopMove}
+                onpointerleave={stopMove}>◄</button
+            >
+            <button
+                class="dpad-btn dpad-right"
+                onpointerdown={() => startMove("right")}
+                onpointerup={stopMove}
+                onpointerleave={stopMove}>►</button
+            >
+            <button
+                class="dpad-btn dpad-down"
+                onpointerdown={() => startMove("down")}
+                onpointerup={stopMove}
+                onpointerleave={stopMove}>▼</button
+            >
+        </div>
+
+        <!-- Action button (bottom-right) — enter station -->
+        <button
+            class="action-btn"
+            onclick={enterStation}
+            aria-label="Entrer dans la borne">OK</button
+        >
+    </div>
 </div>
 
 <style>
+    /* Fill the remaining viewport below the top HUD bar */
     .overworld {
-        min-height: 100%;
-        display: grid;
-        grid-template-columns: auto minmax(220px, 0.55fr);
-        gap: 18px;
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        display: flex;
         align-items: center;
         justify-content: center;
-        padding: clamp(16px, 3vw, 36px);
+        background: var(--gb-darkest);
+        overflow: hidden;
     }
 
-    .screen-frame {
-        display: inline-block;
+    .screen-wrap {
+        position: relative;
         line-height: 0;
-        flex-shrink: 0;
     }
 
-    /* Scale the 160x144 canvas up with crisp pixel edges (DMG spec) */
+    /*
+     * Scale the 160×144 canvas to fill the available viewport.
+     * Portrait  → constrained by width  (100vw wins).
+     * Landscape → constrained by height (100vh - HUD wins).
+     */
     .gb-screen {
         display: block;
-        width: min(480px, 88vw);
+        width: min(100vw, calc((100vh - 56px) * 160 / 144));
         height: auto;
+        aspect-ratio: 160 / 144;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
     }
 
-    .node-panel {
-        padding: 18px;
+    /* ── Touch D-pad (bottom-left of canvas) ─────────────────────────────── */
+    .dpad {
+        position: absolute;
+        bottom: 16%;
+        left: 3%;
+        width: 22%;
+        min-width: 76px;
+        max-width: 110px;
+        aspect-ratio: 1;
         display: grid;
-        gap: 12px;
-        align-content: start;
+        grid-template-areas:
+            ". up ."
+            "left . right"
+            ". down .";
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        touch-action: none;
+        pointer-events: none;
+        opacity: 0.72;
     }
 
-    .mini-status,
-    .node-mode,
-    .node-reward,
-    .node-keys,
-    .node-theme,
-    .walk-hint {
-        font-size: var(--font-xs);
-        line-height: 1.45;
-    }
-
-    .node-title {
-        font-size: var(--font-md);
-        line-height: 1.2;
-    }
-
-    .node-theme {
+    .dpad-btn {
+        pointer-events: auto;
+        background: var(--gb-darkest);
         color: var(--gb-lightest);
-    }
-
-    .enter-btn {
-        width: 100%;
-        padding: 10px;
-        font-size: var(--font-xs);
-        background: var(--gb-dark);
+        border: 1px solid var(--gb-dark);
+        font-size: 11px;
+        line-height: 1;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .dpad-btn:active {
+        background: var(--gb-dark);
+    }
+
+    .dpad-up {
+        grid-area: up;
+    }
+    .dpad-left {
+        grid-area: left;
+    }
+    .dpad-right {
+        grid-area: right;
+    }
+    .dpad-down {
+        grid-area: down;
+    }
+
+    /* ── Action button (bottom-right of canvas) ──────────────────────────── */
+    .action-btn {
+        position: absolute;
+        bottom: 16%;
+        right: 3%;
+        width: 13%;
+        min-width: 48px;
+        max-width: 68px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--gb-darkest);
         color: var(--gb-lightest);
+        border: 2px solid var(--gb-dark);
+        font-size: 11px;
         font-family: inherit;
-        text-align: center;
+        font-weight: bold;
+        cursor: pointer;
+        opacity: 0.72;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
     }
 
-    .enter-btn:hover {
-        background: var(--gb-light);
-        color: var(--gb-darkest);
-    }
-
-    @media (max-width: 760px) {
-        .overworld {
-            grid-template-columns: 1fr;
-            justify-items: center;
-            align-items: start;
-        }
-
-        .gb-screen {
-            width: min(320px, 95vw);
-        }
+    .action-btn:active {
+        background: var(--gb-dark);
     }
 </style>
