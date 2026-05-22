@@ -51,8 +51,13 @@
     let walkTimer: number | null = null;
 
     const selected = $derived(nodes[selectedIndex]);
+    // Unlocked station at player position (>= 0 = can enter)
     const selectedStation = $derived(
         stationAt(nodes, unlockedIndex, player.x, player.y),
+    );
+    // Any station at player position regardless of lock state
+    const anyStationHere = $derived(
+        nodes.findIndex((n) => n.x === player.x && n.y === player.y),
     );
 
     function isUnlocked(index: number) {
@@ -517,6 +522,10 @@
         if (selectedStation >= 0 && frame % 40 < 26) {
             ctx.fillStyle = "#9bbc0f";
             ctx.fillText("[ENTER]", W - 50, barY + 6);
+        } else if (anyStationHere >= 0 && selectedStation < 0) {
+            // Locked station — show feedback
+            ctx.fillStyle = "#306230";
+            ctx.fillText("VERROUILLE", W - 65, barY + 6);
         }
 
         ctx.fillStyle = "#306230";
@@ -551,18 +560,40 @@
         );
         player = result.player;
         markWalkFinished();
-        if (result.stationIndex >= 0) onSelect?.(result.stationIndex);
+        if (result.stationIndex >= 0) {
+            onSelect?.(result.stationIndex);
+            // Auto-enter: walking onto an unlocked station starts the challenge
+            onEnter?.();
+        }
     }
 
     function enterStation() {
         const idx = stationAt(nodes, unlockedIndex, player.x, player.y);
-        if (idx < 0) return;
+        console.log("[OverworldMap] enterStation", {
+            idx,
+            px: player.x,
+            py: player.y,
+            unlockedIndex,
+            nodesLen: nodes.length,
+        });
+        if (idx < 0) {
+            if (anyStationHere >= 0)
+                console.log(
+                    "[OverworldMap] station is LOCKED (index",
+                    anyStationHere,
+                    "> unlockedIndex",
+                    unlockedIndex,
+                    ")",
+                );
+            return;
+        }
         onSelect?.(idx);
         onEnter?.();
     }
 
     function handleKeydown(event: KeyboardEvent) {
-        if ((event.target as HTMLElement)?.tagName === "INPUT") return;
+        const tag = (event.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
         const dirs: Record<string, Direction> = {
             ArrowUp: "up",
             ArrowDown: "down",
@@ -573,7 +604,7 @@
         if (dir) {
             event.preventDefault();
             moveHero(dir);
-        } else if (event.key === "Enter") {
+        } else if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             enterStation();
         }
@@ -631,24 +662,32 @@
         <!-- Touch D-pad (bottom-left) -->
         <div class="dpad" aria-hidden="true">
             <button
+                type="button"
+                tabindex="-1"
                 class="dpad-btn dpad-up"
                 onpointerdown={() => startMove("up")}
                 onpointerup={stopMove}
                 onpointerleave={stopMove}>▲</button
             >
             <button
+                type="button"
+                tabindex="-1"
                 class="dpad-btn dpad-left"
                 onpointerdown={() => startMove("left")}
                 onpointerup={stopMove}
                 onpointerleave={stopMove}>◄</button
             >
             <button
+                type="button"
+                tabindex="-1"
                 class="dpad-btn dpad-right"
                 onpointerdown={() => startMove("right")}
                 onpointerup={stopMove}
                 onpointerleave={stopMove}>►</button
             >
             <button
+                type="button"
+                tabindex="-1"
                 class="dpad-btn dpad-down"
                 onpointerdown={() => startMove("down")}
                 onpointerup={stopMove}
@@ -658,6 +697,7 @@
 
         <!-- Action button (bottom-right) — enter station -->
         <button
+            type="button"
             class="action-btn"
             onclick={enterStation}
             aria-label="Entrer dans la borne">OK</button
