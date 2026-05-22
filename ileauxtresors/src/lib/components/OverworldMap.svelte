@@ -145,6 +145,18 @@
         onEnter?.();
     }
 
+    function clickStation(index: number) {
+        const node = nodes[index];
+        if (!node || !isUnlocked(index)) return;
+        if (player.x === node.x && player.y === node.y) {
+            onSelect?.(index);
+            onEnter?.();
+        } else {
+            player = { x: node.x, y: node.y, facing: "down", walking: false };
+            onSelect?.(index);
+        }
+    }
+
     function handleKeydown(event: KeyboardEvent) {
         if ((event.target as HTMLElement)?.tagName === "INPUT") return;
         if (event.key === "ArrowUp") {
@@ -200,7 +212,7 @@
                         node.y === player.y}
                     style="grid-column: {node.x}; grid-row: {node.y};"
                     disabled={!isUnlocked(index)}
-                    onclick={() => jumpToStation(index)}
+                    onclick={() => clickStation(index)}
                     aria-label={node.title}
                 >
                     <span class="station-sign">!</span>
@@ -234,9 +246,16 @@
             <p class="node-theme">{selected.theme}</p>
             <p class="node-reward glow">Tresor: {selected.reward}</p>
             <p class="node-keys glow">
-                FLECHES = marcher | ENTREE = entrer dans la station
+                FLECHES / clic = se deplacer | ENTREE = entrer
             </p>
-            {#if selectedStation < 0}
+            {#if selectedStation >= 0}
+                <button
+                    class="enter-btn glow pixel-border"
+                    onclick={enterStation}
+                >
+                    [ ENTRER → ]
+                </button>
+            {:else}
                 <p class="walk-hint glow-amber">
                     Marche sur une borne ! pour lancer une epreuve.
                 </p>
@@ -419,6 +438,22 @@
         50% {
             margin-top: -5px;
         }
+    }
+
+    .enter-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: var(--font-xs);
+        background: rgba(15, 56, 15, 0.55);
+        cursor: pointer;
+        color: var(--green);
+        font-family: inherit;
+        text-align: center;
+    }
+
+    .enter-btn:hover {
+        background: rgba(139, 172, 15, 0.3);
+        border-color: var(--green);
     }
 
     @media (max-width: 760px) {

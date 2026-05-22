@@ -166,10 +166,13 @@ function createGameEngine() {
     return getRandomItem(data, category);
   }
 
-  function setNewGame(lvl) {
+  function setNewGame(lvl, maxCount) {
     const key = 'QUESTIONS_LEVEL_' + lvl.toString();
     const questionKeys = Object.keys(data[key] || {});
     allQuestions = shuffleArray(questionKeys);
+    if (maxCount && maxCount < allQuestions.length) {
+      allQuestions = allQuestions.slice(0, maxCount);
+    }
     level.set(lvl);
     retry.set(0);
     showResult.set(false);
@@ -208,7 +211,8 @@ function createGameEngine() {
     bootCompleted = false;
     soundEngine.stopAll();
     await soundEngine.warmUp();
-    phase.set(PHASES.BOOT);
+    phase.set(PHASES.ASK_NAME);
+    await soundEngine.playSequence([getSound('ASK_PLAYER_NAME')]);
   }
 
   async function startGame() {
@@ -277,7 +281,7 @@ function createGameEngine() {
 
     if (node.mode === CHALLENGE_MODES.DICTEE) {
       const lvl = Math.min(node.level ?? 0, levelsCount - 1);
-      setNewGame(lvl);
+      setNewGame(lvl, node.questionCount);
       setQuestion();
       phase.set(PHASES.CHALLENGE);
       await soundEngine.playSequence([getSound('INTRO'), get(currentQuestion)]);

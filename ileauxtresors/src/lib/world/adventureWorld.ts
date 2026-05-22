@@ -12,6 +12,7 @@ export type WorldNode = {
     x: number;
     y: number;
     level?: number;
+    questionCount?: number;
 };
 
 export type PlayerState = {

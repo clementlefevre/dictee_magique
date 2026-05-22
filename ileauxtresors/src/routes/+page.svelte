@@ -39,7 +39,6 @@
 
     async function handleStart() {
         await gameEngine.startNewAdventure();
-        soundEngine.playBoot();
     }
 
     function handleBootComplete() {

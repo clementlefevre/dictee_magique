@@ -25,6 +25,7 @@ export const adventureNodes: WorldNode[] = [
         id: 'village-carrefour',
         mode: CHALLENGE_MODES.DICTEE,
         level: 0,
+        questionCount: 3,
         title: 'Village Carrefour',
         theme: 'Les voitures font vroum, mais ton clavier garde le cap.',
         reward: 'Boussole verte',
