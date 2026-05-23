@@ -773,6 +773,7 @@ function setupMobileTouchControls() {
   let touchStartTime = 0;
   let touchStartX = 0;
   let touchStartY = 0;
+  let moveTarget = null; // {x, y} world coordinates to move toward
   
   function clearAllKeys() {
     keys['ArrowUp'] = false;
@@ -788,52 +789,6 @@ function setupMobileTouchControls() {
     touchStartTime = Date.now();
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
-    showDebug('Canvas touch start');
-  }, { passive: true });
-  
-  canvas.addEventListener('touchmove', (e) => {
-    if (player.interacting || touchId === null) return;
-    
-    // Find our touch
-    let touch = null;
-    for (let i = 0; i < e.touches.length; i++) {
-      if (e.touches[i].identifier === touchId) {
-        touch = e.touches[i];
-        break;
-      }
-    }
-    if (!touch) return;
-    
-    // Calculate offset from start
-    const dx = touch.clientX - touchStartX;
-    const dy = touch.clientY - touchStartY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    
-    // Minimum distance before movement
-    if (dist < 20) {
-      clearAllKeys();
-      return;
-    }
-    
-    // Set direction based on dominant axis
-    clearAllKeys();
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) {
-        keys['ArrowRight'] = true;
-        showDebug(`RIGHT key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
-      } else {
-        keys['ArrowLeft'] = true;
-        showDebug(`LEFT key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
-      }
-    } else {
-      if (dy > 0) {
-        keys['ArrowDown'] = true;
-        showDebug(`DOWN key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
-      } else {
-        keys['ArrowUp'] = true;
-        showDebug(`UP key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
-      }
-    }
   }, { passive: true });
   
   canvas.addEventListener('touchend', (e) => {
@@ -854,10 +809,36 @@ function setupMobileTouchControls() {
       const dx = Math.abs(touch.clientX - touchStartX);
       const dy = Math.abs(touch.clientY - touchStartY);
       
-      // Quick tap = interact
-      if (touchDuration < 250 && dx < 20 && dy < 20 && !player.interacting) {
-        showDebug('Quick tap - interact!');
-        checkInteraction();
+      // Quick tap with minimal movement
+      if (touchDuration < 300 && dx < 30 && dy < 30) {
+        // Convert canvas coords to world coords
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = touch.clientX - rect.left;
+        const canvasY = touch.clientY - rect.top;
+        const worldX = canvasX * (WORLD_W / VW) + cam.x - VW / 2;
+        const worldY = canvasY * (WORLD_H / VH) + cam.y - VH / 2;
+        
+        // Calculate distance from player
+        const distX = Math.abs(worldX - player.x);
+        const distY = Math.abs(worldY - player.y);
+        
+        // If tap is very close to player, try to interact
+        if (distX < TS && distY < TS) {
+          showDebug('Interact!');
+          checkInteraction();
+          moveTarget = null;
+        } else {
+          // Set move target based on dominant axis
+          if (distX > distY) {
+            // Horizontal movement - keep Y aligned, move X toward tap
+            moveTarget = { x: worldX, y: player.y };
+            showDebug(`Move target: X=${worldX.toFixed(0)} (horizontal)`);
+          } else {
+            // Vertical movement - keep X aligned, move Y toward tap
+            moveTarget = { x: player.x, y: worldY };
+            showDebug(`Move target: Y=${worldY.toFixed(0)} (vertical)`);
+          }
+        }
       }
       
       touchId = null;
@@ -1192,25 +1173,38 @@ document.addEventListener('keydown', (e) => {
 //  UPDATE
 // ═══════════════════════════════════════════════════
 function update(dt) {
-  if (player.interacting) return;
+  if (player.interacting) {
+    moveTarget = null; // Clear target when interacting
+    return;
+  }
   
   let vx = 0, vy = 0;
+  
+  // Handle keyboard input
   if (keys['ArrowLeft']  || keys['a'] || keys['A']) vx -= SPEED;
   if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += SPEED;
   if (keys['ArrowUp']    || keys['w'] || keys['W']) vy -= SPEED;
   if (keys['ArrowDown']  || keys['s'] || keys['S']) vy += SPEED;
-
-  // Debug: show key states when any arrow key is pressed
-  if (keys['ArrowLeft'] || keys['ArrowRight'] || keys['ArrowUp'] || keys['ArrowDown']) {
-    const debug = document.getElementById('touchDebug');
-    if (debug) {
-      const activeKeys = [];
-      if (keys['ArrowLeft']) activeKeys.push('LEFT');
-      if (keys['ArrowRight']) activeKeys.push('RIGHT');
-      if (keys['ArrowUp']) activeKeys.push('UP');
-      if (keys['ArrowDown']) activeKeys.push('DOWN');
-      debug.textContent = `Keys active: ${activeKeys.join(', ')} | vx:${vx.toFixed(1)} vy:${vy.toFixed(1)}`;
-      debug.style.display = 'block';
+  
+  // Handle touch movement toward target
+  if (moveTarget && vx === 0 && vy === 0) {
+    const dx = moveTarget.x - player.x;
+    const dy = moveTarget.y - player.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    // Reached target (within 5px)
+    if (dist < 5) {
+      moveTarget = null;
+      showDebug('Target reached');
+    } else {
+      // Move toward target
+      if (Math.abs(dx) > 1) {
+        vx = dx > 0 ? SPEED : -SPEED;
+      }
+      if (Math.abs(dy) > 1) {
+        vy = dy > 0 ? SPEED : -SPEED;
+      }
+      showDebug(`Moving to target (${dist.toFixed(0)}px away)`);
     }
   }
 
