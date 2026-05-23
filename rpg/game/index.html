@@ -292,12 +292,11 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 180px;
-      pointer-events: none;
-      z-index: 50;
+      height: 200px;
+      z-index: 150;
     }
 
-    @media (max-width: 768px), (pointer: coarse) {
+    @media (max-width: 900px), (pointer: coarse) {
       #mobileControls {
         display: block;
       }
@@ -309,30 +308,32 @@
       bottom: 20px;
       width: 140px;
       height: 140px;
-      pointer-events: auto;
     }
 
     .dpad-btn {
       position: absolute;
       width: 46px;
       height: 46px;
-      background: rgba(30, 30, 30, 0.7);
-      border: 2px solid rgba(126, 200, 80, 0.6);
+      background: rgba(20, 20, 20, 0.85);
+      border: 2px solid rgba(126, 200, 80, 0.7);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #7ec850;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
       user-select: none;
-      touch-action: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+      cursor: pointer;
     }
 
     .dpad-btn:active {
-      background: rgba(126, 200, 80, 0.3);
-      border-color: #7ec850;
+      background: rgba(126, 200, 80, 0.4);
+      border-color: #9ed870;
+      transform: scale(0.95);
     }
 
     #dpad-up { top: 0; left: 47px; }
@@ -344,29 +345,31 @@
     #actionBtn {
       position: absolute;
       right: 20px;
-      bottom: 20px;
-      width: 70px;
-      height: 70px;
-      background: rgba(30, 30, 30, 0.7);
-      border: 3px solid rgba(255, 200, 64, 0.6);
+      bottom: 30px;
+      width: 72px;
+      height: 72px;
+      background: rgba(20, 20, 20, 0.85);
+      border: 3px solid rgba(255, 200, 64, 0.7);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffc840;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      pointer-events: auto;
       user-select: none;
-      touch-action: none;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.7);
       text-align: center;
       line-height: 1.2;
+      cursor: pointer;
     }
 
     #actionBtn:active {
-      background: rgba(255, 200, 64, 0.3);
-      border-color: #ffc840;
+      background: rgba(255, 200, 64, 0.4);
+      border-color: #ffd860;
+      transform: scale(0.95);
     }
   </style>
 </head>
@@ -684,35 +687,100 @@ function setupMobileTouchControls() {
     'dpad-right': 'ArrowRight'
   };
 
-  // D-pad touch handlers
+  // D-pad touch handlers with better event handling
   Object.keys(dpadMap).forEach(id => {
     const btn = document.getElementById(id);
     const key = dpadMap[id];
     
-    btn.addEventListener('touchstart', (e) => {
+    const startHandler = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       keys[key] = true;
-    }, { passive: false });
+      console.log('Touch start:', key);
+    };
     
-    btn.addEventListener('touchend', (e) => {
+    const endHandler = (e) => {
       e.preventDefault();
+      e.stopPropagation();
       keys[key] = false;
-    }, { passive: false });
+      console.log('Touch end:', key);
+    };
     
-    btn.addEventListener('touchcancel', (e) => {
-      e.preventDefault();
-      keys[key] = false;
-    }, { passive: false });
+    btn.addEventListener('touchstart', startHandler, { passive: false });
+    btn.addEventListener('touchend', endHandler, { passive: false });
+    btn.addEventListener('touchcancel', endHandler, { passive: false });
+    
+    // Also add mouse events for testing on desktop
+    btn.addEventListener('mousedown', startHandler);
+    btn.addEventListener('mouseup', endHandler);
+    btn.addEventListener('mouseleave', endHandler);
   });
 
   // Action button touch handler
   const actionBtn = document.getElementById('actionBtn');
-  actionBtn.addEventListener('touchstart', (e) => {
+  const actionHandler = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!player.interacting) {
+      console.log('Touch action button');
       checkInteraction();
     }
-  }, { passive: false });
+  };
+  actionBtn.addEventListener('touchstart', actionHandler, { passive: false });
+  actionBtn.addEventListener('mousedown', actionHandler);
+
+  // Canvas swipe controls as fallback
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  
+  const canvas = document.getElementById('c');
+  
+  canvas.addEventListener('touchstart', (e) => {
+    if (player.interacting) return;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+  }, { passive: true });
+  
+  canvas.addEventListener('touchend', (e) => {
+    if (player.interacting) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    
+    // Tap to interact (short touch, minimal movement)
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20 && dt < 300) {
+      checkInteraction();
+      return;
+    }
+    
+    // Swipe to move (ignore if too slow or too short)
+    if (dt > 500 || Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+    
+    // Determine swipe direction
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal swipe
+      if (dx > 0) {
+        keys['ArrowRight'] = true;
+        setTimeout(() => { keys['ArrowRight'] = false; }, 200);
+      } else {
+        keys['ArrowLeft'] = true;
+        setTimeout(() => { keys['ArrowLeft'] = false; }, 200);
+      }
+    } else {
+      // Vertical swipe
+      if (dy > 0) {
+        keys['ArrowDown'] = true;
+        setTimeout(() => { keys['ArrowDown'] = false; }, 200);
+      } else {
+        keys['ArrowUp'] = true;
+        setTimeout(() => { keys['ArrowUp'] = false; }, 200);
+      }
+    }
+  }, { passive: true });
 }
 
 setupMobileTouchControls();
