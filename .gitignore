@@ -8,6 +8,14 @@ app/.babelrc
 app/package-lock.json
 app/yarn.lock
 
+# Village Éducatif game
+rpg/game/node_modules/
+
+# Experimental/test directories
+rpgjs-repo/
+village-educatif-rpgjs/
+village-rpg/
+
 keys/
 *.pem
 *.p12
