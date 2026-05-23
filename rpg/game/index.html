@@ -729,57 +729,99 @@ function setupMobileTouchControls() {
   actionBtn.addEventListener('touchstart', actionHandler, { passive: false });
   actionBtn.addEventListener('mousedown', actionHandler);
 
-  // Canvas swipe controls as fallback
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
-  
+  // Canvas continuous touch controls
   const canvas = document.getElementById('c');
+  let touchActive = false;
+  let touchStartTime = 0;
+  let lastTouchX = 0;
+  let lastTouchY = 0;
   
-  canvas.addEventListener('touchstart', (e) => {
-    if (player.interacting) return;
-    const touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    touchStartTime = Date.now();
-  }, { passive: true });
+  function clearTouchKeys() {
+    keys['ArrowUp'] = false;
+    keys['ArrowDown'] = false;
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+  }
   
-  canvas.addEventListener('touchend', (e) => {
+  function updateTouchMovement(clientX, clientY) {
     if (player.interacting) return;
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartX;
-    const dy = touch.clientY - touchStartY;
-    const dt = Date.now() - touchStartTime;
     
-    // Tap to interact (short touch, minimal movement)
-    if (Math.abs(dx) < 20 && Math.abs(dy) < 20 && dt < 300) {
-      checkInteraction();
+    // Get canvas position
+    const rect = canvas.getBoundingClientRect();
+    const canvasCenterX = rect.left + rect.width / 2;
+    const canvasCenterY = rect.top + rect.height / 2;
+    
+    // Calculate direction from canvas center to touch point
+    const dx = clientX - canvasCenterX;
+    const dy = clientY - canvasCenterY;
+    
+    // Minimum distance to register as movement
+    const minDist = 30;
+    if (Math.abs(dx) < minDist && Math.abs(dy) < minDist) {
+      clearTouchKeys();
       return;
     }
     
-    // Swipe to move (ignore if too slow or too short)
-    if (dt > 500 || Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
-    
-    // Determine swipe direction
+    // Determine primary direction
+    clearTouchKeys();
     if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal swipe
+      // Horizontal movement is stronger
       if (dx > 0) {
         keys['ArrowRight'] = true;
-        setTimeout(() => { keys['ArrowRight'] = false; }, 200);
       } else {
         keys['ArrowLeft'] = true;
-        setTimeout(() => { keys['ArrowLeft'] = false; }, 200);
       }
     } else {
-      // Vertical swipe
+      // Vertical movement is stronger
       if (dy > 0) {
         keys['ArrowDown'] = true;
-        setTimeout(() => { keys['ArrowDown'] = false; }, 200);
       } else {
         keys['ArrowUp'] = true;
-        setTimeout(() => { keys['ArrowUp'] = false; }, 200);
       }
     }
+  }
+  
+  canvas.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    touchActive = true;
+    touchStartTime = Date.now();
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+    
+    if (!player.interacting) {
+      updateTouchMovement(touch.clientX, touch.clientY);
+    }
+  }, { passive: true });
+  
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchActive) return;
+    const touch = e.touches[0];
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+    
+    if (!player.interacting) {
+      updateTouchMovement(touch.clientX, touch.clientY);
+    }
+  }, { passive: true });
+  
+  canvas.addEventListener('touchend', (e) => {
+    const touchDuration = Date.now() - touchStartTime;
+    const touch = e.changedTouches[0];
+    const dx = Math.abs(touch.clientX - lastTouchX);
+    const dy = Math.abs(touch.clientY - lastTouchY);
+    
+    // Quick tap with minimal movement = interact
+    if (touchDuration < 250 && dx < 15 && dy < 15 && !player.interacting) {
+      checkInteraction();
+    }
+    
+    touchActive = false;
+    clearTouchKeys();
+  }, { passive: true });
+  
+  canvas.addEventListener('touchcancel', (e) => {
+    touchActive = false;
+    clearTouchKeys();
   }, { passive: true });
 }
 
