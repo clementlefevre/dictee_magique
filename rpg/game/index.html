@@ -371,6 +371,23 @@
       border-color: #ffd860;
       transform: scale(0.95);
     }
+
+    #touchDebug {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #0f0;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      z-index: 200;
+      display: none;
+      font-family: monospace;
+      max-width: 90%;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -411,6 +428,7 @@
     </div>
     <div id="actionBtn">ESPACE</div>
   </div>
+  <div id="touchDebug"></div>
 
 <script>
 'use strict';
@@ -680,6 +698,23 @@ window.addEventListener('keyup', e => {
 
 // Mobile Touch Controls
 function setupMobileTouchControls() {
+  const debug = document.getElementById('touchDebug');
+  let debugTimeout = null;
+  
+  function showDebug(msg) {
+    debug.textContent = msg;
+    debug.style.display = 'block';
+    clearTimeout(debugTimeout);
+    debugTimeout = setTimeout(() => {
+      debug.style.display = 'none';
+    }, 2000);
+  }
+  
+  // Show debug on any touch
+  document.addEventListener('touchstart', (e) => {
+    showDebug(`Touch detected: ${e.touches.length} touch(es)`);
+  }, { passive: true, once: true });
+  
   const dpadMap = {
     'dpad-up': 'ArrowUp',
     'dpad-down': 'ArrowDown',
@@ -687,141 +722,152 @@ function setupMobileTouchControls() {
     'dpad-right': 'ArrowRight'
   };
 
-  // D-pad touch handlers with better event handling
+  // D-pad touch handlers
   Object.keys(dpadMap).forEach(id => {
     const btn = document.getElementById(id);
+    if (!btn) {
+      showDebug(`ERROR: Button ${id} not found!`);
+      return;
+    }
     const key = dpadMap[id];
     
     const startHandler = (e) => {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       keys[key] = true;
-      console.log('Touch start:', key);
+      showDebug(`D-pad ${key} pressed`);
     };
     
     const endHandler = (e) => {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       keys[key] = false;
-      console.log('Touch end:', key);
     };
     
     btn.addEventListener('touchstart', startHandler, { passive: false });
     btn.addEventListener('touchend', endHandler, { passive: false });
     btn.addEventListener('touchcancel', endHandler, { passive: false });
-    
-    // Also add mouse events for testing on desktop
     btn.addEventListener('mousedown', startHandler);
     btn.addEventListener('mouseup', endHandler);
     btn.addEventListener('mouseleave', endHandler);
   });
 
-  // Action button touch handler
+  // Action button
   const actionBtn = document.getElementById('actionBtn');
-  const actionHandler = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!player.interacting) {
-      console.log('Touch action button');
-      checkInteraction();
-    }
-  };
-  actionBtn.addEventListener('touchstart', actionHandler, { passive: false });
-  actionBtn.addEventListener('mousedown', actionHandler);
+  if (actionBtn) {
+    const actionHandler = (e) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if (!player.interacting) {
+        showDebug('Action button pressed');
+        checkInteraction();
+      }
+    };
+    actionBtn.addEventListener('touchstart', actionHandler, { passive: false });
+    actionBtn.addEventListener('mousedown', actionHandler);
+  }
 
-  // Canvas continuous touch controls
+  // Canvas touch controls - simplified
   const canvas = document.getElementById('c');
-  let touchActive = false;
+  let touchId = null;
   let touchStartTime = 0;
-  let lastTouchX = 0;
-  let lastTouchY = 0;
+  let touchStartX = 0;
+  let touchStartY = 0;
   
-  function clearTouchKeys() {
+  function clearAllKeys() {
     keys['ArrowUp'] = false;
     keys['ArrowDown'] = false;
     keys['ArrowLeft'] = false;
     keys['ArrowRight'] = false;
   }
   
-  function updateTouchMovement(clientX, clientY) {
-    if (player.interacting) return;
-    
-    // Get canvas position
-    const rect = canvas.getBoundingClientRect();
-    const canvasCenterX = rect.left + rect.width / 2;
-    const canvasCenterY = rect.top + rect.height / 2;
-    
-    // Calculate direction from canvas center to touch point
-    const dx = clientX - canvasCenterX;
-    const dy = clientY - canvasCenterY;
-    
-    // Minimum distance to register as movement
-    const minDist = 30;
-    if (Math.abs(dx) < minDist && Math.abs(dy) < minDist) {
-      clearTouchKeys();
-      return;
-    }
-    
-    // Determine primary direction
-    clearTouchKeys();
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal movement is stronger
-      if (dx > 0) {
-        keys['ArrowRight'] = true;
-      } else {
-        keys['ArrowLeft'] = true;
-      }
-    } else {
-      // Vertical movement is stronger
-      if (dy > 0) {
-        keys['ArrowDown'] = true;
-      } else {
-        keys['ArrowUp'] = true;
-      }
-    }
-  }
-  
   canvas.addEventListener('touchstart', (e) => {
+    if (player.interacting) return;
     const touch = e.touches[0];
-    touchActive = true;
+    touchId = touch.identifier;
     touchStartTime = Date.now();
-    lastTouchX = touch.clientX;
-    lastTouchY = touch.clientY;
-    
-    if (!player.interacting) {
-      updateTouchMovement(touch.clientX, touch.clientY);
-    }
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    showDebug('Canvas touch start');
   }, { passive: true });
   
   canvas.addEventListener('touchmove', (e) => {
-    if (!touchActive) return;
-    const touch = e.touches[0];
-    lastTouchX = touch.clientX;
-    lastTouchY = touch.clientY;
+    if (player.interacting || touchId === null) return;
     
-    if (!player.interacting) {
-      updateTouchMovement(touch.clientX, touch.clientY);
+    // Find our touch
+    let touch = null;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === touchId) {
+        touch = e.touches[i];
+        break;
+      }
+    }
+    if (!touch) return;
+    
+    // Calculate offset from start
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    // Minimum distance before movement
+    if (dist < 20) {
+      clearAllKeys();
+      return;
+    }
+    
+    // Set direction based on dominant axis
+    clearAllKeys();
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) {
+        keys['ArrowRight'] = true;
+        showDebug('Moving RIGHT');
+      } else {
+        keys['ArrowLeft'] = true;
+        showDebug('Moving LEFT');
+      }
+    } else {
+      if (dy > 0) {
+        keys['ArrowDown'] = true;
+        showDebug('Moving DOWN');
+      } else {
+        keys['ArrowUp'] = true;
+        showDebug('Moving UP');
+      }
     }
   }, { passive: true });
   
   canvas.addEventListener('touchend', (e) => {
-    const touchDuration = Date.now() - touchStartTime;
-    const touch = e.changedTouches[0];
-    const dx = Math.abs(touch.clientX - lastTouchX);
-    const dy = Math.abs(touch.clientY - lastTouchY);
+    if (touchId === null) return;
     
-    // Quick tap with minimal movement = interact
-    if (touchDuration < 250 && dx < 15 && dy < 15 && !player.interacting) {
-      checkInteraction();
+    // Check if our touch ended
+    let ended = true;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === touchId) {
+        ended = false;
+        break;
+      }
     }
     
-    touchActive = false;
-    clearTouchKeys();
+    if (ended) {
+      const touchDuration = Date.now() - touchStartTime;
+      const touch = e.changedTouches[0];
+      const dx = Math.abs(touch.clientX - touchStartX);
+      const dy = Math.abs(touch.clientY - touchStartY);
+      
+      // Quick tap = interact
+      if (touchDuration < 250 && dx < 20 && dy < 20 && !player.interacting) {
+        showDebug('Quick tap - interact!');
+        checkInteraction();
+      }
+      
+      touchId = null;
+      clearAllKeys();
+    }
   }, { passive: true });
   
   canvas.addEventListener('touchcancel', (e) => {
-    touchActive = false;
-    clearTouchKeys();
+    touchId = null;
+    clearAllKeys();
   }, { passive: true });
 }
 
