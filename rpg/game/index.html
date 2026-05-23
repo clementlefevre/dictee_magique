@@ -284,6 +284,90 @@
       height: 2px;
       background: #4a6a8a;
     }
+
+    /* Mobile Touch Controls */
+    #mobileControls {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 180px;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    @media (max-width: 768px), (pointer: coarse) {
+      #mobileControls {
+        display: block;
+      }
+    }
+
+    #dpad {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      width: 140px;
+      height: 140px;
+      pointer-events: auto;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      background: rgba(30, 30, 30, 0.7);
+      border: 2px solid rgba(126, 200, 80, 0.6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7ec850;
+      font-size: 20px;
+      font-weight: bold;
+      user-select: none;
+      touch-action: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .dpad-btn:active {
+      background: rgba(126, 200, 80, 0.3);
+      border-color: #7ec850;
+    }
+
+    #dpad-up { top: 0; left: 47px; }
+    #dpad-down { bottom: 0; left: 47px; }
+    #dpad-left { top: 47px; left: 0; }
+    #dpad-right { top: 47px; right: 0; }
+    #dpad-center { top: 47px; left: 47px; opacity: 0.3; pointer-events: none; }
+
+    #actionBtn {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 70px;
+      height: 70px;
+      background: rgba(30, 30, 30, 0.7);
+      border: 3px solid rgba(255, 200, 64, 0.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffc840;
+      font-size: 14px;
+      font-weight: bold;
+      pointer-events: auto;
+      user-select: none;
+      touch-action: none;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    #actionBtn:active {
+      background: rgba(255, 200, 64, 0.3);
+      border-color: #ffc840;
+    }
   </style>
 </head>
 <body>
@@ -312,6 +396,18 @@
     </div>
   </div>
   <div id="info">Village Éducatif - Dictée et Calcul</div>
+
+  <!-- Mobile Touch Controls -->
+  <div id="mobileControls">
+    <div id="dpad">
+      <div class="dpad-btn" id="dpad-up">▲</div>
+      <div class="dpad-btn" id="dpad-down">▼</div>
+      <div class="dpad-btn" id="dpad-left">◀</div>
+      <div class="dpad-btn" id="dpad-right">▶</div>
+      <div class="dpad-btn" id="dpad-center">✚</div>
+    </div>
+    <div id="actionBtn">ESPACE</div>
+  </div>
 
 <script>
 'use strict';
@@ -578,6 +674,48 @@ window.addEventListener('keyup', e => {
   }
   keys[e.key] = false; 
 });
+
+// Mobile Touch Controls
+function setupMobileTouchControls() {
+  const dpadMap = {
+    'dpad-up': 'ArrowUp',
+    'dpad-down': 'ArrowDown',
+    'dpad-left': 'ArrowLeft',
+    'dpad-right': 'ArrowRight'
+  };
+
+  // D-pad touch handlers
+  Object.keys(dpadMap).forEach(id => {
+    const btn = document.getElementById(id);
+    const key = dpadMap[id];
+    
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      keys[key] = true;
+    }, { passive: false });
+    
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      keys[key] = false;
+    }, { passive: false });
+    
+    btn.addEventListener('touchcancel', (e) => {
+      e.preventDefault();
+      keys[key] = false;
+    }, { passive: false });
+  });
+
+  // Action button touch handler
+  const actionBtn = document.getElementById('actionBtn');
+  actionBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!player.interacting) {
+      checkInteraction();
+    }
+  }, { passive: false });
+}
+
+setupMobileTouchControls();
 
 // ═══════════════════════════════════════════════════
 //  COLLISION
