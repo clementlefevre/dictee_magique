@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Village Éducatif - Dictée Magique</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+
+    #title {
+      color: #7ec850;
+      font-size: 22px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(126, 200, 80, 0.5);
+    }
+
+    #gameContainer {
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 4px solid #4a3728;
+      box-shadow: 0 0 60px rgba(74, 55, 40, 0.6), 0 0 120px rgba(0,0,0,0.8);
+    }
+
+    #hud {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      color: #ffe8a0;
+      font-size: 13px;
+      text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #score {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: #ffe8a0;
+      font-size: 16px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #challengeOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(14, 7, 0, 0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    #challengeBox {
+      background: linear-gradient(160deg, #2a1c0e, #160b02);
+      border: 4px solid #a07030;
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.85), inset 0 0 80px rgba(60,30,0,0.25);
+      color: #f0d890;
+    }
+
+    #challengeTitle {
+      font-size: 22px;
+      color: #ffc840;
+      text-align: center;
+      margin-bottom: 12px;
+      text-shadow: 0 0 14px rgba(255, 180, 40, 0.55);
+      letter-spacing: 2px;
+    }
+
+    #challengeAnimal {
+      text-align: center;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    #challengeText {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+      text-align: center;
+      color: #e8cc80;
+      font-style: italic;
+    }
+
+    #answerInput {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      font-family: 'Courier New', monospace;
+      background: #0e0804;
+      border: 2px solid #7a5018;
+      border-radius: 8px;
+      color: #ffe090;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    #answerInput:focus {
+      outline: none;
+      border-color: #c08030;
+      box-shadow: 0 0 12px rgba(192, 128, 48, 0.45);
+    }
+
+    #challengeButtons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(145deg, #7ec850, #6ab840);
+      color: #1a2a1a;
+      box-shadow: 0 4px 15px rgba(126, 200, 80, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(126, 200, 80, 0.6);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(145deg, #6a7a8a, #5a6a7a);
+      color: #ffffff;
+    }
+
+    .btn-secondary:hover {
+      background: linear-gradient(145deg, #7a8a9a, #6a7a8a);
+    }
+
+    #feedback {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      display: none;
+    }
+
+    .feedback-correct {
+      background: rgba(126, 200, 80, 0.2);
+      border: 2px solid #7ec850;
+      color: #7ec850;
+    }
+
+    .feedback-incorrect {
+      background: rgba(200, 50, 50, 0.2);
+      border: 2px solid #c83232;
+      color: #ff6666;
+    }
+
+    #info {
+      color: #555;
+      font-size: 12px;
+      margin-top: 8px;
+      letter-spacing: 2px;
+    }
+
+    #calculGrid {
+      display: grid;
+      gap: 8px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .calcul-retenu-label {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 12px;
+      color: #a080d0;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+      margin-bottom: -4px;
+    }
+
+    .calcul-retenu {
+      width: 40px;
+      height: 36px;
+      background: #140a28;
+      border: 2px dashed #8050c0;
+      border-radius: 4px;
+      font-size: 18px;
+      font-family: 'Courier New', monospace;
+      color: #c090f0;
+      text-align: center;
+      justify-self: center;
+      padding: 0;
+    }
+
+    .calcul-retenu:focus {
+      outline: none;
+      border-color: #c090f0;
+      box-shadow: 0 0 8px rgba(160, 100, 240, 0.5);
+    }
+
+    .calcul-retenu::placeholder {
+      color: #5a3a8a;
+      font-size: 11px;
+    }
+
+    .calcul-cell {
+      width: 60px;
+      height: 60px;
+      background: #1a2a3a;
+      border: 2px solid #4a6a8a;
+      border-radius: 8px;
+      font-size: 28px;
+      font-family: 'Courier New', monospace;
+      color: #ffffff;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calcul-input {
+      width: 50px;
+      height: 50px;
+      background: #0a1a2a;
+      border: 2px solid #7ec850;
+      border-radius: 6px;
+      font-size: 24px;
+      font-family: 'Courier New', monospace;
+      color: #ffffff;
+      text-align: center;
+      padding: 0;
+    }
+
+    .calcul-input:focus {
+      outline: none;
+      border-color: #9ed870;
+      box-shadow: 0 0 10px rgba(126, 200, 80, 0.5);
+    }
+
+    .calcul-operator {
+      font-size: 32px;
+      color: #7ec850;
+    }
+
+    .calcul-line {
+      grid-column: 1 / -1;
+      height: 2px;
+      background: #4a6a8a;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">🏡 Village Éducatif</div>
+  <div id="gameContainer">
+    <canvas id="c" width="800" height="576"></canvas>
+    <div id="hud">WASD / Flèches • Espace pour interagir</div>
+    <div id="score">⭐ Score: <span id="scoreValue">0</span></div>
+    
+    <!-- Challenge Overlay -->
+    <div id="challengeOverlay">
+      <div id="challengeBox">
+        <div id="challengeAnimal"></div>
+        <div id="challengeTitle"></div>
+        <div id="challengeText"></div>
+        <div id="challengeContent">
+          <!-- Dictée: text input -->
+          <!-- Calcul: grid -->
+        </div>
+        <div id="challengeButtons">
+          <button class="btn btn-primary" id="submitBtn">Valider</button>
+          <button class="btn btn-secondary" id="cancelBtn">Annuler</button>
+        </div>
+        <div id="feedback"></div>
+      </div>
+    </div>
+  </div>
+  <div id="info">Village Éducatif - Dictée et Calcul</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════
+const TS    = 32;
+const VW    = 800;
+const VH    = 576;
+const MAP_W = 40;
+const MAP_H = 30;
+const SPEED = 2.5;
+
+// ═══════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════
+const gameState = {
+  score: 0,
+  stationsCompleted: new Set(),
+  currentChallenge: null,
+};
+
+let DICTEE_DATA = null;
+
+// Load dictée questions
+async function loadDicteeData() {
+  try {
+    const response = await fetch('assets/text_content.json');
+    DICTEE_DATA = await response.json();
+    console.log('✅ Dictée data loaded:', Object.keys(DICTEE_DATA).length, 'levels');
+  } catch (err) {
+    console.error('❌ Failed to load dictée data:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  TILE IDs
+// ═══════════════════════════════════════════════════
+const T = { GRASS:0, PATH:1, WATER:2, TREE:3, ROCK:4, FLOWER:5, TALL_GRASS:6 };
+const SOLID = new Set([T.WATER, T.TREE, T.ROCK]);
+
+// ═══════════════════════════════════════════════════
+//  MAP (40 × 30)
+// ═══════════════════════════════════════════════════
+const MAP_RAW = [
+'2222222222222222222222222222222222222222',
+'2000000000000000000000000000000000000002',
+'2003330000000000000000000000000000333002',
+'2003330000000000000000000000000000333002',
+'2003330000111111111111111111100000333002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001000000000000000000010000000002',
+'2000000001111111111111111111110000000002',
+'2000000000000000000000000000000000000002',
+'2004404400000000000000000000000044044002',
+'2000000000000000000000000000000000000002',
+'2000000000000000000000000000000000000002',
+'2005505500000000000000000000000055055002',
+'2000000000000000000000000000000000000002',
+'2000000000000000000000000000000000000002',
+'2000000000000000000000000000000000000002',
+'2003330000000000000000000000000000333002',
+'2003330000000000000000000000000000333002',
+'2003330000000000000000000000000000333002',
+'2000000000000000000000000000000000000002',
+'2000000000000000000000000000000000000002',
+'2000000000000000000000000000000000000002',
+'2222222222222222222222222222222222222222',
+];
+
+const map = MAP_RAW.map(row => Array.from(row, c => parseInt(c, 10)));
+
+// ═══════════════════════════════════════════════════
+//  NPC STATIONS
+// ═══════════════════════════════════════════════════
+const STATIONS = [
+  {
+    id: 'place-du-village',
+    x: 19 * TS,
+    y: 8 * TS,
+    animal: { name: 'Renard', emoji: '🦊', sprite: 'fox' },
+    challengeType: 'dictee',
+    dicteeLevel: 0,
+    greeting: "Bonjour ! Prêt pour une dictée ?",
+    success: "Excellent ! Tu as bien écrit le mot !",
+    failure: "Presque ! Réessaie encore.",
+  },
+  {
+    id: 'moulin',
+    x: 10 * TS,
+    y: 12 * TS,
+    animal: { name: 'Hibou', emoji: '🦉' },
+    challengeType: 'calcul',
+    calculDifficulty: 1,
+    greeting: "Salut ! Résous ce calcul mental !",
+    success: "Bravo ! Tu es fort en calcul !",
+    failure: "Pas tout à fait... Vérifie tes calculs.",
+  },
+  {
+    id: 'mare-aux-canards',
+    x: 25 * TS,
+    y: 12 * TS,
+    animal: { name: 'Lapin', emoji: '🐰', sprite: 'rabbit' },
+    challengeType: 'dictee',
+    dicteeLevel: 1,
+    greeting: "Coucou ! Écoute bien ce mot...",
+    success: "Parfait ! Mot bien écrit !",
+    failure: "Oh non... Essaie encore !",
+  },
+  {
+    id: 'forge',
+    x: 19 * TS,
+    y: 20 * TS,
+    animal: { name: 'Ours', emoji: '🐻' },
+    challengeType: 'calcul',
+    calculDifficulty: 2,
+    greeting: "Grrrr ! Calcule ça vite !",
+    success: "Impressionnant ! Tu calcules vite !",
+    failure: "Raté ! Recommence.",
+  },
+];
+
+// ═══════════════════════════════════════════════════
+//  OBJECTS (houses, trees, campfires)
+// ═══════════════════════════════════════════════════
+const OBJECTS = [
+  { type:'house_red',   tx:10, ty: 5, tw:3, th:4 },
+  { type:'house_green', tx:10, ty:10, tw:3, th:4 },
+  { type:'house_blue',  tx:21, ty: 5, tw:3, th:4 },
+  { type:'house_red',   tx:21, ty:10, tw:3, th:4 },
+  { type:'house_green', tx: 3, ty:18, tw:3, th:4 },
+  { type:'house_blue',  tx:33, ty:18, tw:3, th:4 },
+  { type:'campfire', tx:17, ty: 9, tw:1, th:1 },
+  { type:'campfire', tx:15, ty: 9, tw:1, th:1 },
+  { type:'tree_big', tx: 2, ty: 2, tw:2, th:3 },
+  { type:'tree_big', tx: 6, ty: 2, tw:2, th:3 },
+  { type:'tree_big', tx:31, ty: 2, tw:2, th:3 },
+  { type:'tree_big', tx:35, ty: 2, tw:2, th:3 },
+  { type:'tree_big', tx: 2, ty:23, tw:2, th:3 },
+  { type:'tree_big', tx: 6, ty:23, tw:2, th:3 },
+  { type:'tree_big', tx:31, ty:23, tw:2, th:3 },
+  { type:'tree_big', tx:35, ty:23, tw:2, th:3 },
+];
+
+const objBlocked = new Set();
+OBJECTS.forEach(o => {
+  if (o.type === 'campfire') {
+    objBlocked.add(`${o.tx},${o.ty}`);
+  } else {
+    for (let dy = 0; dy < o.th; dy++)
+      for (let dx = 0; dx < o.tw; dx++)
+        objBlocked.add(`${o.tx+dx},${o.ty+dy}`);
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  IMAGES
+// ═══════════════════════════════════════════════════
+const sheet = new Image();
+sheet.src = 'SERENE_VILLAGE_REVAMPED/Serene_Village_32x32.png';
+
+const campfireGif = new Image();
+campfireGif.src = 'SERENE_VILLAGE_REVAMPED/Animated stuff/campfire_32x32.gif';
+
+const playerSprite = new Image();
+playerSprite.src = 'assets/characters/player.png';
+
+// Animal pixel sprites (fox = 1152×32 → 36 frames of 32×32;  rabbit = 192×32 → 6 frames)
+const ANIMAL_SPRITES = {};
+const _fox = new Image();  _fox.src = 'assets/animals/fox.png';    ANIMAL_SPRITES.fox    = _fox;
+const _rabbit = new Image(); _rabbit.src = 'assets/animals/rabbit.png'; ANIMAL_SPRITES.rabbit = _rabbit;
+
+// Animated water GIF
+const waterWavesGif = new Image();
+waterWavesGif.src = 'SERENE_VILLAGE_REVAMPED/Animated stuff/water_waves_32x32.gif';
+
+const PLAYER_SPRITE = {
+  frameW: 32,
+  frameH: 64,
+  drawW: 32,
+  drawH: 48,
+  row: { down: 0, left: 1, right: 2, up: 3 },
+};
+
+const CROP = {
+  grass_plain : [  2*32,  5*32, 32,  32],
+  path_plain  : [  4*32,  4*32, 32,  32],
+  flower_blue :  [  0*32,  8*32, 32,  32],
+  rock_sm     :  [  0*32, 10*32, 32,  32],
+  tree_a      : [  8*32,  8*32, 64,  96],
+  tree_b      : [ 11*32,  8*32, 64,  96],
+  tree_c      : [  8*32, 11*32, 64,  96],
+  house_red_1 : [  0*32, 14*32, 96, 128],
+  house_grn_1 : [  0*32, 22*32, 96, 128],
+  house_blu_1 : [  0*32, 30*32, 96, 128],
+};
+
+const OBJ_SPRITE = {
+  house_red:   { key:'house_red_1', roofColor:'#c8302e', wallColor:'#d4b483' },
+  house_green: { key:'house_grn_1', roofColor:'#3a8c3a', wallColor:'#c8a46c' },
+  house_blue:  { key:'house_blu_1', roofColor:'#2858b0', wallColor:'#d4b483' },
+};
+
+// ═══════════════════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════════════════
+const player = {
+  x: 19 * TS,
+  y: 14 * TS,
+  w: 20,
+  h: 26,
+  facing: 'down',
+  frame: 0,
+  frameTimer: 0,
+  moving: false,
+  interacting: false,
+};
+
+// ═══════════════════════════════════════════════════
+//  CAMERA
+// ═══════════════════════════════════════════════════
+const cam = { x: 0, y: 0 };
+
+function clampCam() {
+  cam.x = Math.round(Math.max(0, Math.min(cam.x, MAP_W * TS - VW)));
+  cam.y = Math.round(Math.max(0, Math.min(cam.y, MAP_H * TS - VH)));
+}
+
+function snapCamera() {
+  const cx = player.x + player.w / 2 - VW / 2;
+  const cy = player.y + player.h / 2 - VH / 2;
+  cam.x += (cx - cam.x) * 0.12;
+  cam.y += (cy - cam.y) * 0.12;
+  clampCam();
+}
+
+// ═══════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════
+const keys = {};
+window.addEventListener('keydown', e => { 
+  // Don't capture keys when typing in challenge input
+  if (player.interacting && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+    return; // Let the input handle the key
+  }
+  
+  keys[e.key] = true;
+  if (e.key === ' ' && !player.interacting) {
+    checkInteraction();
+  }
+  e.preventDefault(); 
+}, { passive: false });
+window.addEventListener('keyup', e => { 
+  if (player.interacting && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+    return;
+  }
+  keys[e.key] = false; 
+});
+
+// ═══════════════════════════════════════════════════
+//  COLLISION
+// ═══════════════════════════════════════════════════
+function tileAt(wx, wy) {
+  const tx = Math.floor(wx / TS);
+  const ty = Math.floor(wy / TS);
+  if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return T.WATER;
+  return map[ty][tx];
+}
+
+function isBlocked(wx, wy) {
+  const tx = Math.floor(wx / TS);
+  const ty = Math.floor(wy / TS);
+  if (objBlocked.has(`${tx},${ty}`)) return true;
+  return SOLID.has(tileAt(wx, wy));
+}
+
+function canMoveTo(nx, ny) {
+  const m = 3;
+  return !isBlocked(nx + m, ny + m) &&
+         !isBlocked(nx + player.w - m, ny + m) &&
+         !isBlocked(nx + m, ny + player.h - m) &&
+         !isBlocked(nx + player.w - m, ny + player.h - m);
+}
+
+// ═══════════════════════════════════════════════════
+//  INTERACTION
+// ═══════════════════════════════════════════════════
+function checkInteraction() {
+  const playerCenterX = player.x + player.w / 2;
+  const playerCenterY = player.y + player.h / 2;
+  
+  for (const station of STATIONS) {
+    const dx = playerCenterX - (station.x + TS/2);
+    const dy = playerCenterY - (station.y + TS/2);
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if (dist < TS * 1.5) {
+      startChallenge(station);
+      return;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CHALLENGE SYSTEM
+// ═══════════════════════════════════════════════════
+function startChallenge(station) {
+  player.interacting = true;
+  gameState.currentChallenge = station;
+  
+  const overlay = document.getElementById('challengeOverlay');
+  const animal = document.getElementById('challengeAnimal');
+  const title = document.getElementById('challengeTitle');
+  const text = document.getElementById('challengeText');
+  const content = document.getElementById('challengeContent');
+  const feedback = document.getElementById('feedback');
+  
+  // Clear previous content
+  content.innerHTML = '';
+  feedback.style.display = 'none';
+  
+  // Show pixel sprite in dialog if available, scaled 3× for chunky pixel look
+  const dialogSprite = station.animal.sprite ? ANIMAL_SPRITES[station.animal.sprite] : null;
+  if (dialogSprite && dialogSprite.complete && dialogSprite.naturalWidth > 0) {
+    animal.innerHTML = '<canvas id="animalCanvas" width="96" height="96" style="image-rendering:pixelated;display:block;margin:0 auto 4px;"></canvas>';
+    const ac = document.getElementById('animalCanvas');
+    const actx = ac.getContext('2d');
+    actx.imageSmoothingEnabled = false;
+    actx.drawImage(dialogSprite, 0, 0, 32, 32, 0, 0, 96, 96);
+  } else {
+    animal.innerHTML = `<span style="font-size:56px;">${station.animal.emoji}</span>`;
+  }
+  title.textContent = station.animal.name;
+  text.textContent = station.greeting;
+  
+  console.log('🎯 Starting challenge:', station.challengeType, 'at station:', station.id);
+  
+  if (station.challengeType === 'dictee') {
+    setupDicteeChallenge(station);
+  } else if (station.challengeType === 'calcul') {
+    setupCalculChallenge(station.calculDifficulty);
+  }
+  
+  overlay.style.display = 'flex';
+}
+
+function setupDicteeChallenge(station) {
+  if (!DICTEE_DATA) {
+    console.error('❌ Dictée data not loaded!');
+    return;
+  }
+  
+  // Get questions for this level
+  const levelKey = `QUESTIONS_LEVEL_${station.dicteeLevel}`;
+  const questions = DICTEE_DATA[levelKey];
+  
+  if (!questions) {
+    console.error('❌ No questions for level:', levelKey);
+    return;
+  }
+  
+  const questionKeys = Object.keys(questions);
+  const randomKey = questionKeys[Math.floor(Math.random() * questionKeys.length)];
+  const correctWord = questions[randomKey];
+  
+  // Store for validation
+  station.currentQuestion = {
+    key: randomKey,
+    word: correctWord,
+    level: station.dicteeLevel
+  };
+  
+  console.log('🎵 Playing:', randomKey, '=', correctWord);
+  
+  // Play audio
+  const audioPath = `assets/sounds/${levelKey}/${randomKey}.mp3`;
+  const sound = new Howl({
+    src: [audioPath],
+    volume: 0.9,
+    onend: () => {
+      console.log('✅ Audio finished');
+    },
+    onloaderror: (id, err) => {
+      console.error('❌ Failed to load audio:', audioPath, err);
+    }
+  });
+  sound.play();
+  
+  // Store sound for replay button
+  station.currentSound = sound;
+  
+  // Show input with replay button
+  const content = document.getElementById('challengeContent');
+  content.innerHTML = `
+    <input type="text" id="answerInput" placeholder="Tape le mot ici..." autocomplete="off">
+    <button class="btn btn-secondary" id="replayBtn" style="margin-top: 10px; width: 100%;">🔊 Rejouer le mot</button>
+  `;
+  
+  setTimeout(() => {
+    document.getElementById('answerInput').focus();
+    document.getElementById('replayBtn').onclick = () => {
+      console.log('🔁 Replaying audio');
+      sound.play();
+    };
+  }, 100);
+}
+
+function setupCalculChallenge(difficulty) {
+  const high = difficulty > 1 ? 149 : 79;
+  const op = Math.random() < 0.55 ? '+' : '-';
+  const a = Math.floor(Math.random() * (high - 18 + 1)) + 18;
+  const b = op === '+' 
+    ? Math.floor(Math.random() * (high - 10 - 7 + 1)) + 7
+    : Math.floor(Math.random() * (a - 3 + 1)) + 3;
+  
+  const answer = op === '+' ? a + b : a - b;
+  gameState.currentChallenge.problem = { a, b, op, answer };
+  
+  console.log('🔢 Generated calcul problem:', a, op, b, '=', answer, '(difficulty:', difficulty, ')');
+  
+  // Determine how many digit columns are needed
+  const cols = Math.max(String(a).length, String(b).length, String(answer).length);
+  const aStr = String(a).padStart(cols, '0');
+  const bStr = String(b).padStart(cols, '0');
+
+  // Build digit cells; leading-zero positions are invisible placeholders
+  function numCells(str) {
+    return str.split('').map((ch, i) => {
+      const leading = parseInt(str.slice(0, i + 1), 10) === 0;
+      return leading
+        ? `<div class="calcul-cell" style="visibility:hidden"></div>`
+        : `<div class="calcul-cell">${ch}</div>`;
+    }).join('');
+  }
+
+  const retenuCells = Array.from({ length: cols }, (_, i) =>
+    `<input type="text" inputmode="numeric" class="calcul-retenu" id="retenu${i}" maxlength="1" placeholder="r">`
+  ).join('');
+
+  const answerCells = Array.from({ length: cols }, (_, i) =>
+    `<input type="text" inputmode="numeric" class="calcul-input" id="calcul${i}" maxlength="1">`
+  ).join('');
+
+  const content = document.getElementById('challengeContent');
+  content.innerHTML = `
+    <div id="calculGrid" style="grid-template-columns: repeat(${cols + 1}, 60px);">
+      <div class="calcul-retenu-label">&#x2191; retenues</div>
+      <div></div>${retenuCells}
+      <div></div>${numCells(aStr)}
+      <div class="calcul-cell calcul-operator">${op}</div>${numCells(bStr)}
+      <div class="calcul-line"></div>
+      <div></div>${answerCells}
+    </div>
+  `;
+
+  // Retenu cells: digit-only, no auto-advance (free navigation)
+  for (let i = 0; i < cols; i++) {
+    const r = document.getElementById(`retenu${i}`);
+    r.addEventListener('input', () => {
+      r.value = r.value.replace(/[^0-9]/g, '').slice(-1);
+    });
+  }
+
+  // Answer cells: digit-only, auto-advance left→right, Enter submits
+  for (let i = 0; i < cols; i++) {
+    const inp = document.getElementById(`calcul${i}`);
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^0-9]/g, '').slice(-1);
+      if (inp.value.length === 1 && i < cols - 1) document.getElementById(`calcul${i + 1}`).focus();
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitChallenge();
+    });
+  }
+
+  setTimeout(() => document.getElementById('calcul0').focus(), 100);
+}
+
+function submitChallenge() {
+  const station = gameState.currentChallenge;
+  const feedback = document.getElementById('feedback');
+  let correct = false;
+  
+  console.log('✅ Submitting challenge type:', station.challengeType);
+  
+  if (station.challengeType === 'dictee') {
+    const answer = document.getElementById('answerInput').value.trim();
+    const correctWord = station.currentQuestion.word;
+    
+    // Normalize: lowercase + remove accents
+    const normalize = (str) => {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    
+    const normalizedAnswer = normalize(answer);
+    const normalizedCorrect = normalize(correctWord);
+    correct = normalizedAnswer === normalizedCorrect;
+    
+    console.log('📝 Answer:', answer, '| Correct:', correctWord, '| Match:', correct);
+    
+    if (!correct) {
+      feedback.textContent = `${station.failure} Le mot était : "${correctWord}"`;
+    }
+  } else if (station.challengeType === 'calcul') {
+    const digits = [];
+    for (let i = 0; document.getElementById(`calcul${i}`); i++) {
+      digits.push(document.getElementById(`calcul${i}`).value);
+    }
+    const userAnswer = parseInt(digits.join(''), 10);
+    correct = !isNaN(userAnswer) && userAnswer === station.problem.answer;
+    
+    console.log('🔢 Answer:', userAnswer, '| Correct:', station.problem.answer, '| Match:', correct);
+  }
+  
+  if (correct) {
+    // Play success sound
+    const successSounds = [
+      'assets/sounds/ANSWERS_OK/ok_1.mp3',
+      'assets/sounds/ANSWERS_OK/ok_2.mp3',
+      'assets/sounds/ANSWERS_OK/ok_3.mp3',
+      'assets/sounds/ANSWERS_OK/ok_4.mp3'
+    ];
+    const randomSuccess = successSounds[Math.floor(Math.random() * successSounds.length)];
+    new Howl({ src: [randomSuccess], volume: 0.8 }).play();
+    
+    feedback.textContent = station.success;
+    feedback.className = 'feedback-correct';
+    feedback.style.display = 'block';
+    gameState.score += station.challengeType === 'dictee' ? 10 : 20;
+    gameState.stationsCompleted.add(station.id);
+    document.getElementById('scoreValue').textContent = gameState.score;
+    setTimeout(closeChallenge, 2500);
+  } else {
+    // Play failure sound
+    const failureSounds = [
+      'assets/sounds/ANSWERS_NOK/nok_1.mp3',
+      'assets/sounds/ANSWERS_NOK/nok_2.mp3',
+      'assets/sounds/ANSWERS_NOK/nok_3.mp3',
+      'assets/sounds/ANSWERS_NOK/nok_4.mp3',
+      'assets/sounds/ANSWERS_NOK/nok_5.mp3'
+    ];
+    const randomFailure = failureSounds[Math.floor(Math.random() * failureSounds.length)];
+    new Howl({ src: [randomFailure], volume: 0.8 }).play();
+    
+    feedback.className = 'feedback-incorrect';
+    feedback.style.display = 'block';
+  }
+}
+
+function closeChallenge() {
+  document.getElementById('challengeOverlay').style.display = 'none';
+  player.interacting = false;
+  gameState.currentChallenge = null;
+}
+
+// Event listeners for challenge buttons
+document.getElementById('submitBtn').addEventListener('click', submitChallenge);
+document.getElementById('cancelBtn').addEventListener('click', closeChallenge);
+
+// Enter key to submit
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && player.interacting) {
+    e.preventDefault();
+    submitChallenge();
+  }
+  if (e.key === 'Escape' && player.interacting) {
+    e.preventDefault();
+    closeChallenge();
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  UPDATE
+// ═══════════════════════════════════════════════════
+function update(dt) {
+  if (player.interacting) return;
+  
+  let vx = 0, vy = 0;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) vx -= SPEED;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += SPEED;
+  if (keys['ArrowUp']    || keys['w'] || keys['W']) vy -= SPEED;
+  if (keys['ArrowDown']  || keys['s'] || keys['S']) vy += SPEED;
+
+  if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
+
+  player.moving = (vx !== 0 || vy !== 0);
+
+  if (player.moving) {
+    if      (vx < 0) player.facing = 'left';
+    else if (vx > 0) player.facing = 'right';
+    else if (vy < 0) player.facing = 'up';
+    else             player.facing = 'down';
+
+    const nx = player.x + vx;
+    const ny = player.y + vy;
+    if (canMoveTo(nx, player.y)) player.x = nx;
+    if (canMoveTo(player.x, ny)) player.y = ny;
+
+    player.frameTimer += dt;
+    if (player.frameTimer > 140) { 
+      player.frameTimer = 0; 
+      player.frame = (player.frame + 1) % 4; 
+    }
+  } else {
+    player.frame = 0;
+    player.frameTimer = 0;
+  }
+
+  snapCamera();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const GRASS_VARIANTS = ['#5d9e3f','#5ea040','#60a242','#5b9c3d'];
+const FLOWER_COLORS  = ['#e84040','#e8c040','#5080e8','#e860e8'];
+
+function drawSheet(key, dx, dy, dw, dh) {
+  if (!sheet.complete || sheet.naturalWidth === 0) return false;
+  const [sx, sy, sw, sh] = CROP[key];
+  ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, dw ?? sw, dh ?? sh);
+  return true;
+}
+
+function drawTile(tid, sx, sy, tx, ty, time) {
+  switch (tid) {
+    case T.GRASS: {
+      const v = ((tx * 7 + ty * 13) & 3);
+      ctx.fillStyle = GRASS_VARIANTS[v];
+      ctx.fillRect(sx, sy, TS, TS);
+      if (sheet.complete && sheet.naturalWidth > 0) {
+        const [gx, gy] = CROP.grass_plain;
+        ctx.drawImage(sheet, gx, gy, TS, TS, sx, sy, TS, TS);
+      }
+      break;
+    }
+    case T.PATH: {
+      ctx.fillStyle = '#c4a56d';
+      ctx.fillRect(sx, sy, TS, TS);
+      if (sheet.complete && sheet.naturalWidth > 0) {
+        const [px, py] = CROP.path_plain;
+        ctx.drawImage(sheet, px, py, TS, TS, sx, sy, TS, TS);
+      }
+      break;
+    }
+    case T.WATER: {
+      if (waterWavesGif.complete && waterWavesGif.naturalWidth > 0) {
+        ctx.drawImage(waterWavesGif, sx, sy, TS, TS);
+      } else {
+        const wave = Math.sin(time * 0.001 + tx * 0.4 + ty * 0.3) * 12;
+        const r = Math.round(42  + wave * 0.3);
+        const g = Math.round(120 + wave * 0.4);
+        const b = Math.round(180 + wave * 0.5);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(sx, sy, TS, TS);
+      }
+      break;
+    }
+    case T.TREE: {
+      ctx.fillStyle = '#1a5c1a';
+      ctx.fillRect(sx, sy, TS, TS);
+      ctx.fillStyle = '#2a8a2a';
+      ctx.beginPath();
+      ctx.arc(sx + 16, sy + 14, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#5a3820';
+      ctx.fillRect(sx + 12, sy + 22, 8, 10);
+      break;
+    }
+    case T.ROCK: {
+      ctx.fillStyle = '#5d9e3f';
+      ctx.fillRect(sx, sy, TS, TS);
+      ctx.fillStyle = '#7a7a7a';
+      ctx.beginPath();
+      ctx.ellipse(sx + 16, sy + 20, 11, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    default:
+      ctx.fillStyle = '#5d9e3f';
+      ctx.fillRect(sx, sy, TS, TS);
+  }
+}
+
+function drawObject(obj, time) {
+  const sx = Math.round(obj.tx * TS - cam.x);
+  const sy = Math.round(obj.ty * TS - cam.y);
+  const pw = obj.tw * TS;
+  const ph = obj.th * TS;
+
+  if (sx + pw < -8 || sy + ph < -8 || sx > VW + 8 || sy > VH + 8) return;
+
+  if (obj.type === 'campfire') {
+    if (campfireGif.complete && campfireGif.naturalWidth > 0) {
+      ctx.drawImage(campfireGif, sx, sy, TS, TS);
+    } else {
+      const flicker = 0.6 + Math.sin(time * 0.015) * 0.4;
+      ctx.fillStyle = '#555';
+      ctx.beginPath();
+      ctx.ellipse(sx + 16, sy + 26, 9, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, 100, 0, ${flicker})`;
+      ctx.beginPath();
+      ctx.ellipse(sx + 16, sy + 18, 7, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  if (obj.type === 'tree_big') {
+    const treeKeys = ['tree_a','tree_b','tree_c'];
+    const key = treeKeys[((obj.tx + obj.ty) % 3)];
+    if (!drawSheet(key, sx, sy, pw, ph)) {
+      ctx.fillStyle = '#5a3820';
+      ctx.fillRect(sx + pw/2 - 6, sy + ph - 22, 12, 22);
+      const cx = sx + pw / 2;
+      const cy = sy + ph * 0.45;
+      ctx.fillStyle = '#1a5c1a';
+      ctx.beginPath(); ctx.arc(cx, cy + 8, pw * 0.45, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#2a8c2a';
+      ctx.beginPath(); ctx.arc(cx, cy, pw * 0.42, 0, Math.PI*2); ctx.fill();
+    }
+    return;
+  }
+
+  const sp = OBJ_SPRITE[obj.type];
+  if (!sp) return;
+
+  if (!drawSheet(sp.key, sx, sy, pw, ph)) {
+    const roof = sp.roofColor;
+    const wall = sp.wallColor;
+    const rh   = Math.round(ph * 0.42);
+    ctx.fillStyle = wall;
+    ctx.fillRect(sx, sy + rh, pw, ph - rh);
+    ctx.fillStyle = roof;
+    ctx.beginPath();
+    ctx.moveTo(sx - 4, sy + rh + 4);
+    ctx.lineTo(sx + pw / 2, sy);
+    ctx.lineTo(sx + pw + 4, sy + rh + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#6a3a1a';
+    ctx.fillRect(sx + pw/2 - 8, sy + ph - 36, 16, 36);
+  }
+}
+
+function drawNPC(station) {
+  const sx = Math.round(station.x - cam.x);
+  const sy = Math.round(station.y - cam.y);
+  if (sx + 32 < -4 || sy + 32 < -4 || sx > VW + 4 || sy > VH + 4) return;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(sx + 16, sy + 28, 10, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Pixel sprite if available, else emoji fallback
+  const spriteImg = station.animal.sprite ? ANIMAL_SPRITES[station.animal.sprite] : null;
+  if (spriteImg && spriteImg.complete && spriteImg.naturalWidth > 0) {
+    const FRAME_W = 32;
+    const frame = Math.floor(Date.now() / 280) % 4; // 4-frame idle cycle
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(spriteImg, frame * FRAME_W, 0, FRAME_W, 32, sx, sy, 32, 32);
+    ctx.imageSmoothingEnabled = false;
+  } else {
+    ctx.font = '26px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(station.animal.emoji, sx + 16, sy + 14);
+  }
+
+  // Completion ring or exclamation mark
+  if (gameState.stationsCompleted.has(station.id)) {
+    ctx.strokeStyle = '#7ec850';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.arc(sx + 16, sy + 14, 17, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.font = 'bold 13px Arial';
+    ctx.fillStyle = '#7ec850';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText('✓', sx + 16, sy - 10);
+    ctx.fillText('✓', sx + 16, sy - 10);
+  } else {
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#ffdd00';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText('!', sx + 16, sy - 10);
+    ctx.fillText('!', sx + 16, sy - 10);
+  }
+
+  // Proximity interaction hint
+  const pcx = player.x + player.w / 2;
+  const pcy = player.y + player.h / 2;
+  const dist = Math.hypot(pcx - (station.x + 16), pcy - (station.y + 16));
+  if (dist < TS * 1.8 && !player.interacting && !gameState.stationsCompleted.has(station.id)) {
+    const label = 'ESPACE';
+    ctx.font = 'bold 10px monospace';
+    const lw = ctx.measureText(label).width + 12;
+    const bx = sx + 16 - lw / 2;
+    const by = sy - 30;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, lw, 16, 4);
+    ctx.fill();
+    ctx.strokeStyle = '#ffc840';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#ffe080';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, sx + 16, by + 8);
+  }
+}
+
+function drawPlayer(time) {
+  const sx = Math.round(player.x - cam.x);
+  const sy = Math.round(player.y - cam.y);
+  
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath();
+  ctx.ellipse(sx + player.w/2, sy + player.h - 1, 8, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Draw from sprite sheet if loaded
+  if (playerSprite.complete && playerSprite.naturalWidth > 0) {
+    const frame = player.moving ? player.frame : 0;
+    const srcX = frame * PLAYER_SPRITE.frameW;
+    const srcY = PLAYER_SPRITE.row[player.facing] * PLAYER_SPRITE.frameH;
+    const drawX = sx + player.w / 2 - PLAYER_SPRITE.drawW / 2;
+    const drawY = sy + player.h - PLAYER_SPRITE.drawH;
+    ctx.drawImage(
+      playerSprite,
+      srcX,
+      srcY,
+      PLAYER_SPRITE.frameW,
+      PLAYER_SPRITE.frameH,
+      drawX,
+      drawY,
+      PLAYER_SPRITE.drawW,
+      PLAYER_SPRITE.drawH
+    );
+  } else {
+    // Fallback: simple colored rectangle character
+    const bob = player.moving ? Math.sin(time * 0.018) * 1.5 : 0;
+    ctx.fillStyle = '#2a3a8a';
+    ctx.fillRect(sx + 3, sy + player.h - 14 + bob, 7, 9);
+    ctx.fillRect(sx + player.w - 10, sy + player.h - 14 + bob, 7, 9);
+    ctx.fillStyle = '#c83020';
+    ctx.fillRect(sx + 2, sy + 10 + bob, player.w - 4, player.h - 22);
+    ctx.fillStyle = '#f5c890';
+    ctx.fillRect(sx + 4, sy + bob - 2, player.w - 8, 12);
+    ctx.fillStyle = '#6a3010';
+    ctx.fillRect(sx + 4, sy + bob - 2, player.w - 8, 4);
+  }
+}
+
+function render(time) {
+  ctx.clearRect(0, 0, VW, VH);
+
+  const tx0 = Math.max(0, Math.floor(cam.x / TS));
+  const ty0 = Math.max(0, Math.floor(cam.y / TS));
+  const tx1 = Math.min(MAP_W, Math.ceil((cam.x + VW) / TS));
+  const ty1 = Math.min(MAP_H, Math.ceil((cam.y + VH) / TS));
+
+  for (let ty = ty0; ty < ty1; ty++) {
+    for (let tx = tx0; tx < tx1; tx++) {
+      const sx = tx * TS - cam.x;
+      const sy = ty * TS - cam.y;
+      drawTile(map[ty][tx], sx, sy, tx, ty, time);
+    }
+  }
+
+  const drawables = OBJECTS.map(o => ({
+    obj: o,
+    sortY: (o.ty + o.th) * TS,
+    type: 'object'
+  }));
+
+  STATIONS.forEach(s => {
+    drawables.push({
+      obj: s,
+      sortY: s.y + TS,
+      type: 'npc'
+    });
+  });
+
+  drawables.push({ obj: null, sortY: player.y + player.h, type: 'player' });
+
+  drawables.sort((a, b) => a.sortY - b.sortY);
+
+  for (const item of drawables) {
+    if (item.type === 'player') {
+      drawPlayer(time);
+    } else if (item.type === 'npc') {
+      drawNPC(item.obj);
+    } else {
+      drawObject(item.obj, time);
+    }
+  }
+
+  const vig = ctx.createRadialGradient(VW/2, VH/2, VH * 0.25, VW/2, VH/2, VH * 0.8);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.38)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, VW, VH);
+}
+
+// ═══════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════
+let lastTime = 0;
+function loop(time) {
+  const dt = Math.min(time - lastTime, 50);
+  lastTime = time;
+  update(dt);
+  render(time);
+  requestAnimationFrame(loop);
+}
+
+// Load data then start game
+loadDicteeData().then(() => {
+  console.log('🎮 Game starting...');
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
