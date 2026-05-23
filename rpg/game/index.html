@@ -735,7 +735,7 @@ function setupMobileTouchControls() {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       keys[key] = true;
-      showDebug(`D-pad ${key} pressed`);
+      showDebug(`D-pad ${key} = true | keys obj: ${JSON.stringify(keys)}`);
     };
     
     const endHandler = (e) => {
@@ -820,18 +820,18 @@ function setupMobileTouchControls() {
     if (Math.abs(dx) > Math.abs(dy)) {
       if (dx > 0) {
         keys['ArrowRight'] = true;
-        showDebug('Moving RIGHT');
+        showDebug(`RIGHT key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
       } else {
         keys['ArrowLeft'] = true;
-        showDebug('Moving LEFT');
+        showDebug(`LEFT key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
       }
     } else {
       if (dy > 0) {
         keys['ArrowDown'] = true;
-        showDebug('Moving DOWN');
+        showDebug(`DOWN key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
       } else {
         keys['ArrowUp'] = true;
-        showDebug('Moving UP');
+        showDebug(`UP key=true dx:${dx.toFixed(0)} dy:${dy.toFixed(0)}`);
       }
     }
   }, { passive: true });
@@ -1199,6 +1199,20 @@ function update(dt) {
   if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += SPEED;
   if (keys['ArrowUp']    || keys['w'] || keys['W']) vy -= SPEED;
   if (keys['ArrowDown']  || keys['s'] || keys['S']) vy += SPEED;
+
+  // Debug: show key states when any arrow key is pressed
+  if (keys['ArrowLeft'] || keys['ArrowRight'] || keys['ArrowUp'] || keys['ArrowDown']) {
+    const debug = document.getElementById('touchDebug');
+    if (debug) {
+      const activeKeys = [];
+      if (keys['ArrowLeft']) activeKeys.push('LEFT');
+      if (keys['ArrowRight']) activeKeys.push('RIGHT');
+      if (keys['ArrowUp']) activeKeys.push('UP');
+      if (keys['ArrowDown']) activeKeys.push('DOWN');
+      debug.textContent = `Keys active: ${activeKeys.join(', ')} | vx:${vx.toFixed(1)} vy:${vy.toFixed(1)}`;
+      debug.style.display = 'block';
+    }
+  }
 
   if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
 
